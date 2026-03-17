@@ -425,20 +425,32 @@ function vConnect(){
 }
 
 // ---- HOME ----
-// Swarm orbs — bb1 bubble-map style, organic scatter, varied sizes
+// Swarm orbs — nn2/bb1 style with branded SVG icons, organic scatter, varied sizes
 const SWARM_ORBS = [
-  {av:"🦈",name:"Ρ-5571",role:"VC Predator",      c:"#FF6B8A", lx:22, ly:44, sz:76, fi:0},
-  {av:"⚔️", name:"Θ-9915",role:"Red Blade",       c:"#F87171", lx:73, ly:22, sz:70, fi:1},
-  {av:"🌊",name:"Ψ-2041",role:"Market Oracle",    c:"#00FFD4", lx:12, ly:20, sz:66, fi:2},
-  {av:"💰",name:"Δ-1159",role:"Econ Killer",      c:"#FBBF24", lx:33, ly:28, sz:62, fi:3},
-  {av:"🚀",name:"Κ-3394",role:"Viral Phantom",    c:"#4ADE80", lx:46, ly:36, sz:60, fi:4},
-  {av:"👁️", name:"Ζ-1287",role:"Policy Warden",   c:"#C084FC", lx:59, ly:54, sz:56, fi:5},
-  {av:"🎯",name:"Λ-7766",role:"Psyche Hacker",    c:"#38BDF8", lx:55, ly:18, sz:52, fi:0},
-  {av:"🔄",name:"Φ-3302",role:"Loop Architect",   c:"#818CF8", lx:38, ly:64, sz:50, fi:1},
-  {av:"🛡️", name:"Ξ-5508",role:"Moat Guardian",   c:"#FB923C", lx:79, ly:66, sz:48, fi:2},
-  {av:"⚡",name:"Π-6641",role:"Build Wrecker",    c:"#94A3B8", lx:88, ly:38, sz:46, fi:3},
-  {av:"📈",name:"Ω-8873",role:"Trend Analyst",    c:"#34D399", lx:18, ly:72, sz:46, fi:4},
-  {av:"💎",name:"Σ-4420",role:"Revenue Ghost",    c:"#F59E0B", lx:66, ly:80, sz:44, fi:5},
+  {name:"Ρ-5571",role:"VC Predator",    c:"#FF6B8A", lx:22, ly:44, sz:76, fi:0,
+   ic:`<polygon points="12,3 20,19 4,19" stroke-width="1.6" stroke-linejoin="round"/>`},
+  {name:"Θ-9915",role:"Red Blade",      c:"#F87171", lx:73, ly:22, sz:70, fi:1,
+   ic:`<line x1="5" y1="5" x2="19" y2="19" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" stroke-width="2" stroke-linecap="round"/>`},
+  {name:"Ψ-2041",role:"Market Oracle",  c:"#00FFD4", lx:12, ly:20, sz:66, fi:2,
+   ic:`<path d="M3,12 C6,6 9,18 12,12 C15,6 18,18 21,12" stroke-width="2" stroke-linecap="round" fill="none"/>`},
+  {name:"Δ-1159",role:"Econ Killer",    c:"#FBBF24", lx:33, ly:28, sz:62, fi:3,
+   ic:`<rect x="3" y="13" width="5" height="8" rx="1" stroke-width="1.5"/><rect x="9.5" y="8" width="5" height="13" rx="1" stroke-width="1.5"/><rect x="16" y="4" width="5" height="17" rx="1" stroke-width="1.5"/>`},
+  {name:"Κ-3394",role:"Viral Phantom",  c:"#4ADE80", lx:46, ly:36, sz:60, fi:4,
+   ic:`<path d="M12,2 C16,2 19.5,6 19.5,11 L12,22 L4.5,11 C4.5,6 8,2 12,2Z" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="12" cy="9" r="2.5" stroke-width="1.5"/>`},
+  {name:"Ζ-1287",role:"Policy Warden",  c:"#C084FC", lx:59, ly:54, sz:56, fi:5,
+   ic:`<path d="M2,12 C5.5,6 18.5,6 22,12 C18.5,18 5.5,18 2,12Z" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="3" stroke-width="1.5"/>`},
+  {name:"Λ-7766",role:"Psyche Hacker",  c:"#38BDF8", lx:55, ly:18, sz:52, fi:0,
+   ic:`<circle cx="12" cy="12" r="9" stroke-width="1.5"/><circle cx="12" cy="12" r="4.5" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>`},
+  {name:"Φ-3302",role:"Loop Architect", c:"#818CF8", lx:38, ly:64, sz:50, fi:1,
+   ic:`<path d="M4,12 A8,8 0 1,1 12,20" stroke-width="1.8" stroke-linecap="round" fill="none"/><polyline points="9,17 12,21 15,17" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" fill="none"/>`},
+  {name:"Ξ-5508",role:"Moat Guardian",  c:"#FB923C", lx:79, ly:66, sz:48, fi:2,
+   ic:`<path d="M12,2 L20,5.5 L20,12 C20,16.5 12,21 12,21 C12,21 4,16.5 4,12 L4,5.5 Z" stroke-width="1.5" stroke-linejoin="round" fill="none"/>`},
+  {name:"Π-6641",role:"Build Wrecker",  c:"#94A3B8", lx:88, ly:38, sz:46, fi:3,
+   ic:`<polyline points="13,2 8,12 12.5,12 10.5,22 16,11 11.5,11 13,2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/>`},
+  {name:"Ω-8873",role:"Trend Analyst",  c:"#34D399", lx:18, ly:72, sz:46, fi:4,
+   ic:`<polyline points="3,17 8,10 13,14 21,6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="15,6 21,6 21,12" stroke-width="1.8" stroke-linecap="round" fill="none"/>`},
+  {name:"Σ-4420",role:"Revenue Ghost",  c:"#F59E0B", lx:66, ly:80, sz:44, fi:5,
+   ic:`<polygon points="12,2 22,12 12,22 2,12" stroke-width="1.5" stroke-linejoin="round"/>`},
 ];
 
 function vHome(){
@@ -446,11 +458,11 @@ function vHome(){
 
     <!-- HERO -->
     <div style="text-align:center;padding:52px 24px 36px;max-width:700px;margin:0 auto">
-      <h2 style="font-size:32px;font-weight:700;color:#F5F0FF;margin-bottom:14px;line-height:1.25;letter-spacing:-.5px">
+      <h2 style="font-size:32px;font-weight:700;color:#F5F0FF;margin-bottom:14px;line-height:1.25;letter-spacing:-.5px;font-family:'DM Sans',sans-serif">
         Will your startup<br/><span style="background:linear-gradient(135deg,#C084FC,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">survive the swarm?</span>
       </h2>
-      <p style="font-size:14px;color:rgba(200,185,255,.5);max-width:400px;margin:0 auto 32px;line-height:1.7;font-weight:400">
-        Hundreds of AI agents with opposing biases dissect your pitch.<br/>Verdict sealed on StarkNet. Forever.
+      <p style="font-size:14px;font-weight:400;color:rgba(210,195,255,.6);max-width:380px;margin:0 auto 32px;line-height:1.65;font-family:'DM Sans',sans-serif">
+        Hundreds of AI agents tear your pitch apart.<br/>Verdict sealed on StarkNet. Forever.
       </p>
       <button onclick="go('input')" style="
         display:inline-flex;align-items:center;gap:10px;
@@ -464,7 +476,7 @@ function vHome(){
         <span style="font-size:17px">⚡</span>
         Throw your startup to the swarm
       </button>
-      <div style="margin-top:12px;font-size:11px;color:rgba(168,85,247,.3);font-weight:400;letter-spacing:.02em">Free · No sign-up · On-chain in 60s</div>
+      <div style="margin-top:12px;font-size:11px;color:rgba(168,85,247,.3);font-weight:400;font-family:'DM Sans',sans-serif;letter-spacing:.02em">Free · No sign-up · On-chain in 60s</div>
     </div>
 
     <!-- BUBBLE MAP — bb1 style, large, organic scatter -->
@@ -475,48 +487,58 @@ function vHome(){
       <div style="position:absolute;left:70%;top:30%;width:300px;height:180px;background:radial-gradient(ellipse,rgba(255,107,138,.05) 0%,transparent 70%);pointer-events:none"></div>
       <div style="position:absolute;left:20%;top:60%;width:260px;height:160px;background:radial-gradient(ellipse,rgba(0,255,212,.04) 0%,transparent 70%);pointer-events:none"></div>
 
-      <!-- SVG connection lines — matches orb pixel positions in 1000×520 viewBox -->
+      <!-- SVG connection lines — centers recalculated for translate(-50%,0) layout, viewBox 1000×520 -->
       <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 1000 520" preserveAspectRatio="none">
-        <g stroke="#7C3AED" stroke-width="1" opacity=".2" fill="none">
-          <line x1="120" y1="104" x2="220" y2="229"/>
-          <line x1="120" y1="104" x2="330" y2="146"/>
-          <line x1="220" y1="229" x2="330" y2="146"/>
-          <line x1="220" y1="229" x2="180" y2="374"/>
-          <line x1="330" y1="146" x2="460" y2="187"/>
-          <line x1="460" y1="187" x2="550" y2="94"/>
-          <line x1="460" y1="187" x2="590" y2="281"/>
-          <line x1="550" y1="94"  x2="730" y2="114"/>
-          <line x1="730" y1="114" x2="880" y2="197"/>
-          <line x1="590" y1="281" x2="790" y2="343"/>
-          <line x1="790" y1="343" x2="880" y2="197"/>
-          <line x1="590" y1="281" x2="380" y2="333"/>
-          <line x1="660" y1="416" x2="790" y2="343"/>
-          <line x1="380" y1="333" x2="180" y2="374"/>
+        <g stroke="#7C3AED" stroke-width="1.1" opacity=".22" fill="none">
+          <!-- Ψ-Δ --> <line x1="120" y1="137" x2="330" y2="177"/>
+          <!-- Ψ-Ρ --> <line x1="120" y1="137" x2="220" y2="267"/>
+          <!-- Δ-Ρ --> <line x1="330" y1="177" x2="220" y2="267"/>
+          <!-- Ρ-Ω --> <line x1="220" y1="267" x2="180" y2="397"/>
+          <!-- Δ-Κ --> <line x1="330" y1="177" x2="460" y2="217"/>
+          <!-- Κ-Λ --> <line x1="460" y1="217" x2="550" y2="120"/>
+          <!-- Κ-Ζ --> <line x1="460" y1="217" x2="590" y2="309"/>
+          <!-- Λ-Θ --> <line x1="550" y1="120" x2="730" y2="149"/>
+          <!-- Θ-Π --> <line x1="730" y1="149" x2="880" y2="221"/>
+          <!-- Ζ-Ξ --> <line x1="590" y1="309" x2="790" y2="367"/>
+          <!-- Ξ-Π --> <line x1="790" y1="367" x2="880" y2="221"/>
+          <!-- Ζ-Φ --> <line x1="590" y1="309" x2="380" y2="358"/>
+          <!-- Σ-Ξ --> <line x1="660" y1="438" x2="790" y2="367"/>
+          <!-- Φ-Ω --> <line x1="380" y1="358" x2="180" y2="397"/>
         </g>
-        <g stroke="#C084FC" stroke-width=".7" opacity=".12" fill="none">
-          <line x1="330" y1="146" x2="590" y2="281"/>
-          <line x1="220" y1="229" x2="460" y2="187"/>
-          <line x1="550" y1="94"  x2="880" y2="197"/>
-          <line x1="380" y1="333" x2="660" y2="416"/>
+        <g stroke="#C084FC" stroke-width=".7" opacity=".11" fill="none">
+          <!-- Δ-Λ --> <line x1="330" y1="177" x2="550" y2="120"/>
+          <!-- Ρ-Κ --> <line x1="220" y1="267" x2="460" y2="217"/>
+          <!-- Λ-Π --> <line x1="550" y1="120" x2="880" y2="221"/>
+          <!-- Φ-Σ --> <line x1="380" y1="358" x2="660" y2="438"/>
         </g>
       </svg>
 
-      <!-- Agent orbs — sized by importance, floating freely -->
-      ${SWARM_ORBS.map((a,i)=>`
-        <div style="position:absolute;left:${a.lx}%;top:${a.ly}%;transform:translate(-50%,-50%);
-          width:${a.sz}px;height:${a.sz}px;border-radius:50%;cursor:pointer;
-          background:radial-gradient(circle at 32% 32%,${a.c}22,${a.c}05);
-          border:2px solid ${a.c}45;
-          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-          box-shadow:0 0 ${a.sz*.4}px ${a.c}28,inset 0 0 ${a.sz*.15}px ${a.c}12;
+      <!-- Agent nodes — nn2 style: dark circle + thick colored ring + SVG icon + label below -->
+      ${SWARM_ORBS.map((a,i)=>{
+        const iconSz = Math.round(a.sz * .42);
+        return `<div style="position:absolute;left:${a.lx}%;top:${a.ly}%;transform:translateX(-50%);
+          display:flex;flex-direction:column;align-items:center;
           animation:float${a.fi} ${4+i*.3}s ${i*.18}s ease-in-out infinite;
-          transition:box-shadow .2s,transform .2s;z-index:${3+i%3}"
-          onmouseover="this.style.boxShadow='0 0 ${a.sz*.7}px ${a.c}55,inset 0 0 ${a.sz*.2}px ${a.c}25';this.style.transform='translate(-50%,-50%) scale(1.12)';this.style.zIndex=20"
-          onmouseout="this.style.boxShadow='0 0 ${a.sz*.4}px ${a.c}28,inset 0 0 ${a.sz*.15}px ${a.c}12';this.style.transform='translate(-50%,-50%) scale(1)';this.style.zIndex=${3+i%3}">
-          <span style="font-size:${a.sz*.32}px;line-height:1">${a.av}</span>
-          ${a.sz>=52?`<span style="font-size:${Math.max(7,a.sz*.11)}px;font-weight:700;color:${a.c}cc;letter-spacing:.02em;font-family:'DM Sans',sans-serif">${a.name}</span>`:""}
-        </div>
-      `).join("")}
+          cursor:pointer;z-index:${3+i%3};transition:z-index 0s"
+          onmouseover="this.style.zIndex=20;this.firstElementChild.style.boxShadow='0 0 ${Math.round(a.sz*.6)}px ${a.c}60,0 0 ${Math.round(a.sz*.2)}px ${a.c}30 inset';this.firstElementChild.style.borderColor='${a.c}'"
+          onmouseout="this.style.zIndex=${3+i%3};this.firstElementChild.style.boxShadow='0 0 ${Math.round(a.sz*.3)}px ${a.c}35,0 0 ${Math.round(a.sz*.1)}px ${a.c}15 inset';this.firstElementChild.style.borderColor='${a.c}bb'">
+          <div style="width:${a.sz}px;height:${a.sz}px;border-radius:50%;
+            background:radial-gradient(circle at 38% 35%,rgba(22,16,46,.96),rgba(8,6,20,.99));
+            border:3px solid ${a.c}bb;
+            box-shadow:0 0 ${Math.round(a.sz*.3)}px ${a.c}35,0 0 ${Math.round(a.sz*.1)}px ${a.c}15 inset;
+            display:flex;align-items:center;justify-content:center;
+            transition:box-shadow .2s,border-color .2s">
+            <svg width="${iconSz}" height="${iconSz}" viewBox="0 0 24 24"
+              stroke="${a.c}" fill="none" style="overflow:visible">
+              ${a.ic}
+            </svg>
+          </div>
+          <div style="margin-top:7px;text-align:center">
+            <div style="font-size:9px;font-weight:700;color:${a.c};font-family:'DM Sans',sans-serif;letter-spacing:.04em;line-height:1.2">${a.name}</div>
+            <div style="font-size:8px;font-weight:400;color:rgba(200,185,255,.38);font-family:'DM Sans',sans-serif;margin-top:1px;white-space:nowrap">${a.role}</div>
+          </div>
+        </div>`;
+      }).join("")}
 
       <!-- Ghost orbs — many, varied sizes, implying the full 500+ swarm -->
       ${[
