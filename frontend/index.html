@@ -50,6 +50,9 @@ body::before{
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
 @keyframes glowPulse{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes agentFireRing{0%{box-shadow:0 0 0 0 rgba(168,85,247,.55),0 0 20px rgba(139,92,246,.2)}100%{box-shadow:0 0 0 28px rgba(168,85,247,0),0 0 20px rgba(139,92,246,.15)}}
+@keyframes speechPop{0%{opacity:0;transform:translateY(6px) scale(.95)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes speechFade{0%{opacity:1}100%{opacity:0}}
 
 /* Animated bottom wave line */
 .wave-wrap{position:fixed;bottom:0;left:0;right:0;height:110px;pointer-events:none;z-index:1;overflow:hidden;opacity:.55}
@@ -113,31 +116,28 @@ header{
 .fd::after{content:'';position:absolute;bottom:0;left:0;width:0;height:1px;background:linear-gradient(90deg,#9333EA,#C084FC);transition:width .3s}
 .fd:focus-within::after{width:100%}
 
-/* War room bubbles */
-.bubble-arena{
-  position:relative;width:100%;height:280px;border-radius:14px;
-  background:radial-gradient(ellipse at 50% 60%,rgba(139,92,246,.06),rgba(6,7,20,.4));
-  border:1px solid rgba(139,92,246,.08);overflow:hidden;
+/* War room arena — full viewport, Bubblemaps-style dark */
+.war-arena{
+  position:relative;width:100%;height:calc(100vh - 58px);overflow:hidden;
+  background:#060714;
 }
-.bubble-arena::after{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 100%,rgba(139,92,246,.1),transparent 70%);
-  pointer-events:none;
-}
+/* Hide grid inside war room */
+.war-arena::before{content:'';position:absolute;inset:0;background:#060714;z-index:0;pointer-events:none}
 .agent-bubble{
   position:absolute;border-radius:50%;
-  border:2px solid rgba(255,255,255,.04);
-  background:rgba(255,255,255,.02);
   display:flex;align-items:center;justify-content:center;flex-direction:column;
   cursor:pointer;
-  transition:background .6s,border-color .5s,width .4s,height .4s,left .8s,top .8s,box-shadow .5s;
-  opacity:.2;transform-origin:center center;
+  transition:background .45s,border-color .35s,width .4s,height .4s,box-shadow .45s,opacity .45s;
+  opacity:.35;transform:translate(-50%,-50%);
 }
-.agent-bubble.active{opacity:1;animation:bubbleAppear .4s ease forwards}
+.agent-bubble.active{opacity:1}
 .agent-bubble.flipping{animation:flipPop .4s ease}
+.agent-bubble:hover{opacity:.9}
 .agent-bubble:hover .bubble-tooltip{display:block}
-.bubble-av{font-size:14px;pointer-events:none;transition:font-size .4s}
-.bubble-conf{font-size:8px;font-weight:800;font-family:'JetBrains Mono',monospace;pointer-events:none;margin-top:1px}
+.bubble-av{pointer-events:none;transition:font-size .4s;font-family:'JetBrains Mono',monospace;font-weight:700}
+.bubble-conf{font-size:9px;font-weight:800;font-family:'JetBrains Mono',monospace;pointer-events:none;margin-top:2px}
+.gauge-overlay{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:20;text-align:center;pointer-events:none}
+.feed-panel{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:180px;z-index:20;max-height:72vh;overflow:hidden}
 .bubble-tooltip{
   display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
   width:180px;background:rgba(6,7,20,.97);border:1px solid rgba(139,92,246,.2);border-radius:9px;
@@ -260,10 +260,14 @@ const ALL_AGENTS = {
 const DEMO_KEYS = ["MarketPulse","UnitEcon","RedTeam","PolicyScan","ViralEngine","SkepticalVC"];
 const DEMO_AGENTS = DEMO_KEYS.map(k => ({...ALL_AGENTS[k], handle: k}));
 
-// Bubble positions (6 agents)
+// Bubble positions — full viewport spread (center pitch at 50%,50%)
 const BUBBLE_POS = [
-  {x:12,y:18},{x:42,y:8},{x:72,y:16},
-  {x:15,y:62},{x:45,y:68},{x:75,y:58}
+  {x:11, y:20}, // VEGA  — top-left
+  {x:82, y:14}, // KIRA  — top-right
+  {x:90, y:56}, // BLADE — far-right
+  {x:68, y:84}, // WARD  — bottom-right
+  {x:12, y:74}, // FLUX  — bottom-left
+  {x:27, y:54}, // FANG  — left-center
 ];
 
 const PILLARS = [
@@ -333,10 +337,16 @@ function go(p){S.phase=p;render()}
 // RENDER
 // ============================================================
 function render(){
-  $("app").innerHTML = ({
-    connect:vConnect, home:vHome, input:vInput,
-    sim:vSim, proving:vProving, verdict:vVerdict
-  }[S.phase]||vConnect)();
+  try{
+    $("app").innerHTML = ({
+      connect:vConnect, home:vHome, input:vInput,
+      sim:vSim, proving:vProving, verdict:vVerdict
+    }[S.phase]||vConnect)();
+  }catch(e){
+    console.error("render error:",e);
+    $("app").innerHTML=`<div style="color:#FF6B8A;padding:40px;font-family:monospace;font-size:11px">render error: ${e.message}</div>`;
+    return;
+  }
   bind();
   if(S.phase==="sim") initBubbleDom();
   if(S.phase==="connect") startTypewriter();
@@ -689,70 +699,191 @@ function vInput(){
 // ---- SIMULATING (Bubble War Room) ----
 function vSim(){
   const title = S.inp.name || "Your Startup";
-  const total = DEMO_AGENTS.length * PILLARS.length * 2; // ×2 for 2 rounds
   const prog = Math.round(S.prog);
+  const arcLen = 282.7;
+  const offset = arcLen - (prog / 100) * arcLen;
 
-  return `${hdr()}<div class="mn fi">
-    <div class="pn" style="padding:12px 16px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div>
-          <span style="font-size:13px;font-weight:800;color:#E0D8FF">⚡ WAR ROOM — <span style="color:#A855F7">${esc(title)}</span></span>
-          ${S.currentRound>0?`<span style="font-size:9px;font-weight:700;margin-left:8px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,.06);color:#A855F7">ROUND ${S.currentRound}</span>`:""}
-        </div>
-        <div style="font-size:15px;font-weight:800;color:#A855F7">${prog}%</div>
-      </div>
-      <div class="warroom-status" id="wrStatus">
-        <span class="status-chip" style="background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.1);color:rgba(168,85,247,.5)">
-          <span id="s-loader" style="display:inline-block;width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(139,92,246,.3);border-top-color:#A855F7;animation:spin .7s linear infinite"></span>
-          <span id="s-text">Analyzing pitch...</span>
-        </span>
-      </div>
-      <div style="display:flex;gap:3px;margin-bottom:4px">
-        ${PILLARS.map(p=>`<div class="pg" style="flex:1"><div class="pf" id="pg-${p.key}" style="width:0%;background:${p.color};opacity:.6"></div></div>`).join("")}
-      </div>
-      <div style="display:flex;gap:3px">
-        ${PILLARS.map(p=>`<div style="flex:1;text-align:center;font-size:7.5px;color:${p.color}55;font-weight:700">${p.icon}</div>`).join("")}
+  // Agent base sizes — vary dramatically like Bubblemaps hub nodes
+  const BASE_SZ = [88, 72, 98, 66, 80, 104];
+
+  // Agent-to-agent connections forming a dense web
+  const PAIRS = [
+    [0,1],[0,5],[1,2],[2,3],[3,4],[4,5],  // ring
+    [1,5],[0,4],[2,5],[1,3],[0,3],[4,2]   // cross-links
+  ];
+
+  // Satellite nodes: [x%, y%, radius, color, fillOpacity]
+  // Clustered near each agent + mid-space ambience
+  const SATS = [
+    // VEGA (11,20) — teal cluster
+    [5,10,14,"#00FFD4",.38],[18,7,9,"#00FFD4",.26],[4,30,11,"#34D399",.3],[22,31,7,"#00FFD4",.2],[9,38,8,"#00FFD4",.18],
+    // KIRA (82,14) — gold cluster
+    [89,7,12,"#FBBF24",.36],[75,5,8,"#FBBF24",.26],[93,24,10,"#F59E0B",.3],[74,24,7,"#FBBF24",.2],[88,26,5,"#FBBF24",.16],
+    // BLADE (90,56) — red cluster
+    [97,46,11,"#F87171",.36],[97,67,9,"#F87171",.26],[83,47,7,"#F87171",.2],[86,69,10,"#FB923C",.28],[95,38,6,"#F87171",.18],
+    // WARD (68,84) — purple cluster
+    [77,92,13,"#C084FC",.36],[59,91,9,"#C084FC",.26],[73,76,8,"#818CF8",.22],[57,80,11,"#C084FC",.3],[76,77,6,"#C084FC",.18],
+    // FLUX (12,74) — green cluster
+    [4,82,12,"#4ADE80",.36],[5,63,9,"#4ADE80",.26],[21,84,10,"#34D399",.3],[19,64,7,"#4ADE80",.2],[8,55,6,"#4ADE80",.16],
+    // FANG (27,54) — pink cluster
+    [19,43,11,"#FF6B8A",.36],[37,43,8,"#FF6B8A",.26],[17,64,9,"#FF6B8A",.3],[38,65,7,"#FF6B8A",.2],[26,40,5,"#FF6B8A",.18],
+    // Mid-space floaters (the "400+ other agents" feel)
+    [42,16,7,"#8B5CF6",.2],[55,28,5,"#A855F7",.17],[38,70,8,"#7C3AED",.19],
+    [50,60,6,"#C084FC",.15],[63,42,9,"#6D28D9",.17],[49,86,5,"#A855F7",.15],
+    [35,34,7,"#8B5CF6",.16],[65,62,6,"#7C3AED",.14],[44,47,5,"#A855F7",.13],
+    [72,35,8,"#9333EA",.16],[30,78,6,"#8B5CF6",.15],[55,70,7,"#A855F7",.14],
+    [47,24,5,"#C084FC",.14],[60,78,8,"#7C3AED",.16],[33,20,6,"#9333EA",.15],
+  ];
+
+  // Satellite→agent parent index (first 30 sats have parents)
+  const SAT_PARENTS = [
+    [0,0],[1,0],[2,0],[3,0],[4,0],
+    [5,1],[6,1],[7,1],[8,1],[9,1],
+    [10,2],[11,2],[12,2],[13,2],[14,2],
+    [15,3],[16,3],[17,3],[18,3],[19,3],
+    [20,4],[21,4],[22,4],[23,4],[24,4],
+    [25,5],[26,5],[27,5],[28,5],[29,5],
+  ];
+
+  return `${hdr()}<div class="war-arena fi" id="warArena">
+
+    <!-- STATIC NETWORK LAYER: satellite nodes + all connection lines -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="satGlow" x="-80%" y="-80%" width="360%" height="360%">
+          <feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Agent-to-agent backbone -->
+      ${PAIRS.map(([a,b])=>{
+        const pa=BUBBLE_POS[a],pb=BUBBLE_POS[b];
+        return `<line x1="${pa.x}%" y1="${pa.y}%" x2="${pb.x}%" y2="${pb.y}%" stroke="rgba(139,92,246,.09)" stroke-width=".8" stroke-dasharray="3 7"/>`;
+      }).join("")}
+      <!-- Satellite→agent lines -->
+      ${SAT_PARENTS.map(([si,ai])=>{
+        const s=SATS[si],a=BUBBLE_POS[ai];
+        return `<line x1="${s[0]}%" y1="${s[1]}%" x2="${a.x}%" y2="${a.y}%" stroke="rgba(139,92,246,.06)" stroke-width=".5"/>`;
+      }).join("")}
+      <!-- Satellite nodes -->
+      ${SATS.map(([x,y,r,col,op])=>`<circle cx="${x}%" cy="${y}%" r="${r}" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.2" stroke-opacity="${op*.55}" style="filter:url(#satGlow)"/>`).join("")}
+    </svg>
+
+    <!-- DYNAMIC FLASH LAYER (agent fires flash here) -->
+    <svg id="connLines" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3" xmlns="http://www.w3.org/2000/svg">
+      <g id="connGroup"></g>
+    </svg>
+
+    <!-- CENTRAL PITCH NODE -->
+    <div id="pitchNode" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;pointer-events:none">
+      <div style="width:86px;height:86px;border-radius:50%;
+        border:2px solid rgba(168,85,247,.2);
+        background:radial-gradient(circle at 38% 32%,rgba(88,28,220,.24),rgba(6,7,20,.86));
+        display:flex;align-items:center;justify-content:center;flex-direction:column;
+        box-shadow:0 0 45px rgba(139,92,246,.18),inset 0 0 18px rgba(139,92,246,.08);
+        position:relative;text-align:center">
+        <div style="position:absolute;inset:-9px;border-radius:50%;border:1px solid rgba(139,92,246,.09);animation:pulseRing 2.8s ease-out infinite"></div>
+        <div style="position:absolute;inset:-19px;border-radius:50%;border:1px solid rgba(139,92,246,.045);animation:pulseRing 2.8s ease-out 1s infinite"></div>
+        <span style="font-size:6.5px;font-weight:800;color:rgba(168,85,247,.32);letter-spacing:.22em;display:block;margin-bottom:3px">PITCH</span>
+        <span style="font-size:10px;font-weight:800;color:#E0D8FF;max-width:70px;line-height:1.25;display:block">${esc(title.length>12?title.slice(0,12)+'…':title)}</span>
+        <span id="pitchScore" style="font-size:9px;font-weight:700;color:rgba(168,85,247,.38);margin-top:3px;font-family:'JetBrains Mono',monospace">${prog}%</span>
       </div>
     </div>
 
-    <div class="warroom-inner" style="display:flex;gap:12px">
-      <!-- Bubble Arena -->
-      <div style="flex:1.3">
-        <div class="bubble-arena" id="bubbleArena">
-          ${DEMO_AGENTS.map((a,i)=>{
-            const pos = BUBBLE_POS[i];
-            const jx = pos.x + (Math.random()*6-3);
-            const jy = pos.y + (Math.random()*6-3);
-            return `<div class="agent-bubble" id="bubble-${a.id}"
-              style="left:${jx}%;top:${jy}%;width:34px;height:34px;animation:float${i} ${3.5+i*.4}s ${i*.3}s ease-in-out infinite"
-              data-base-x="${jx}" data-base-y="${jy}"
-              title="">
-              <span class="bubble-av" id="bav-${a.id}" style="font-size:13px">${a.av}</span>
-              <span class="bubble-conf" id="bconf-${a.id}" style="color:rgba(255,255,255,.2)"></span>
-              <div class="bubble-tooltip" id="btt-${a.id}"><b>${a.name}</b><span id="bttr-${a.id}">Waiting...</span></div>
-            </div>`;
+    <!-- AGENT BUBBLES — large, varied sizes, full viewport -->
+    ${DEMO_AGENTS.map((a,i)=>{
+      const pos=BUBBLE_POS[i], bsz=BASE_SZ[i];
+      const jx=pos.x+(Math.random()*1.5-.75);
+      const jy=pos.y+(Math.random()*1.5-.75);
+      return `<div class="agent-bubble" id="bubble-${a.id}"
+        style="left:${jx}%;top:${jy}%;width:${bsz}px;height:${bsz}px;
+          border:3px solid ${a.c}32;
+          background:radial-gradient(circle at 38% 32%,${a.c}14,rgba(6,7,20,.8));
+          box-shadow:0 0 ${bsz*.28}px ${a.c}1c,0 0 ${bsz*.55}px ${a.c}08,inset 0 0 ${bsz*.14}px ${a.c}07;
+          animation:float${i%6} ${4.5+i*.4}s ${i*.3}s ease-in-out infinite"
+        data-bx="${jx}" data-by="${jy}">
+        <span class="bubble-av" id="bav-${a.id}" style="font-size:${Math.round(bsz*.26)}px;color:${a.c};text-shadow:0 0 20px ${a.c}88">${a.av}</span>
+        <span style="font-size:7px;font-weight:700;color:rgba(255,255,255,.22);letter-spacing:.11em;pointer-events:none;margin-top:2px;font-family:'DM Sans',sans-serif">${a.codename}</span>
+        <span class="bubble-conf" id="bconf-${a.id}"></span>
+        <div class="bubble-tooltip" id="btt-${a.id}"><b>${a.name} · ${a.codename}</b><span id="bttr-${a.id}">Waiting for verdict...</span></div>
+      </div>`;
+    }).join("")}
+
+    <!-- RPM GAUGE — top-center overlay (compact, non-intrusive) -->
+    <div class="gauge-overlay">
+      <div style="background:rgba(6,7,20,.65);backdrop-filter:blur(12px);border-radius:16px;padding:10px 14px 6px;border:1px solid rgba(139,92,246,.1)">
+        <svg viewBox="0 0 240 130" width="182" height="98" style="overflow:visible;display:block;margin:0 auto">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#4C1D95"/>
+              <stop offset="40%" stop-color="#7C3AED"/>
+              <stop offset="70%" stop-color="#9333EA"/>
+              <stop offset="100%" stop-color="#C084FC"/>
+            </linearGradient>
+            <filter id="gaugeGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="needleGlow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path d="M 25,115 A 90,90 0 0 1 215,115" fill="none" stroke="rgba(139,92,246,.1)" stroke-width="10" stroke-linecap="round"/>
+          <path id="gaugeArc" d="M 25,115 A 90,90 0 0 1 215,115" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="${arcLen}" stroke-dashoffset="${offset}"
+            style="transition:stroke-dashoffset .4s ease;filter:url(#gaugeGlow)"/>
+          ${[0,1,2,3,4,5,6,7,8].map(i=>{
+            const ang=-180+i*(180/8),rad=ang*Math.PI/180,cx=120,cy=115,r=90;
+            const x1=(cx+r*Math.cos(rad)).toFixed(1),y1=(cy+r*Math.sin(rad)).toFixed(1);
+            const x2=(cx+(r-(i%4===0?13:8))*Math.cos(rad)).toFixed(1),y2=(cy+(r-(i%4===0?13:8))*Math.sin(rad)).toFixed(1);
+            const maj=i===0||i===4||i===8;
+            return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${maj?"rgba(192,132,252,.55)":"rgba(139,92,246,.22)"}" stroke-width="${maj?1.4:.7}"/>`;
           }).join("")}
+          <g id="gaugeNeedle" style="transform-origin:120px 115px;transform:rotate(${-90+prog*1.8}deg);transition:transform .4s ease">
+            <line x1="120" y1="115" x2="120" y2="36" stroke="#E9D5FF" stroke-width="1.5" stroke-linecap="round" style="filter:url(#needleGlow)"/>
+            <circle cx="120" cy="115" r="5" fill="#9333EA" stroke="#E9D5FF" stroke-width="1.5"/>
+          </g>
+          <text id="gaugePct" x="120" y="107" text-anchor="middle" style="font-size:22px;font-weight:800;fill:#E0D8FF;font-family:'DM Sans',sans-serif">${prog}</text>
+          <text x="120" y="126" text-anchor="middle" style="font-size:6.5px;font-weight:700;fill:rgba(168,85,247,.38);letter-spacing:.18em;font-family:'DM Sans',sans-serif">SWARM INTENSITY</text>
+        </svg>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:-2px;padding-bottom:2px">
+          <span id="s-loader" style="display:inline-block;width:5px;height:5px;border-radius:50%;border:1.5px solid rgba(139,92,246,.3);border-top-color:#A855F7;animation:spin .7s linear infinite;flex-shrink:0"></span>
+          <span id="s-text" style="font-size:8.5px;color:rgba(168,85,247,.45);font-family:'DM Sans',sans-serif;white-space:nowrap;overflow:hidden;max-width:130px;text-overflow:ellipsis">Analyzing pitch...</span>
+          ${S.currentRound>0?`<span style="font-size:7.5px;padding:1px 6px;border-radius:7px;background:rgba(139,92,246,.08);color:#A855F7;font-weight:700;flex-shrink:0">R${S.currentRound}</span>`:''}
         </div>
-        <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
-          ${DEMO_AGENTS.map(a=>`<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:${a.c}08;border:1px solid ${a.c}10;color:${a.c}88;font-weight:600">${a.av} ${a.handle}</span>`).join("")}
+        <div style="text-align:center;padding-bottom:4px">
+          <span style="font-size:9px;font-weight:800;color:rgba(224,216,255,.45)">WAR ROOM</span>
+          <span style="font-size:9px;font-weight:800;color:#A855F7;margin-left:5px">${esc(title.length>18?title.slice(0,18)+'…':title)}</span>
         </div>
-      </div>
-
-      <!-- Log -->
-      <div style="width:220px;flex-shrink:0">
-        <div style="font-size:8px;font-weight:800;color:rgba(168,85,247,.25);letter-spacing:.12em;margin-bottom:6px">LIVE FEED</div>
-        <div class="log-panel" id="logPanel"></div>
       </div>
     </div>
+
+    <!-- LIVE FEED — right edge, no box -->
+    <div class="feed-panel">
+      <div style="font-size:7px;font-weight:800;color:rgba(168,85,247,.16);letter-spacing:.16em;margin-bottom:6px;text-align:right">LIVE FEED</div>
+      <div class="log-panel" id="logPanel" style="max-height:calc(72vh - 28px)"></div>
+    </div>
+
+    <!-- Hidden pillar bars (logic only) -->
+    <div style="display:none">
+      ${PILLARS.map(p=>`<div class="pg"><div class="pf" id="pg-${p.key}" style="width:0%;background:${p.color}"></div></div>`).join("")}
+    </div>
+
+    <!-- Speech layer -->
+    <div id="speechLayer" style="position:absolute;inset:0;pointer-events:none;z-index:14"></div>
   </div>`;
 }
 
 // ---- PROVING ----
 function vProving(){
-  return `${hdr()}<div class="mn fi" style="text-align:center;padding-top:50px">
-    <div style="font-size:42px;margin-bottom:14px">🔐</div>
-    <h2 style="font-size:17px;font-weight:800;color:#A78BFA;margin-bottom:6px">Publishing to StarkNet</h2>
-    <p style="font-size:11px;color:rgba(167,139,250,.38);max-width:350px;margin:0 auto 24px">Writing verdict on-chain. Verifiable by anyone, forever.</p>
+  return `${hdr()}<div class="mn fi" style="text-align:center;padding-top:60px">
+    <div style="margin:0 auto 18px;width:64px;height:64px;border-radius:50%;border:2px solid rgba(168,85,247,.25);background:radial-gradient(circle at 38% 32%,rgba(88,28,220,.3),rgba(6,7,20,.8));display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(139,92,246,.2)">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <h2 style="font-size:16px;font-weight:800;color:#A78BFA;margin-bottom:6px;letter-spacing:.02em">Publishing to StarkNet</h2>
+    <p style="font-size:10.5px;color:rgba(167,139,250,.35);max-width:340px;margin:0 auto 28px">Verdict sealed on-chain. Verifiable by anyone, forever.</p>
     <div style="max-width:360px;margin:0 auto">
       <div style="height:4px;border-radius:2px;background:rgba(167,139,250,.07);overflow:hidden;margin-bottom:10px">
         <div id="pvB" style="width:0%;height:100%;border-radius:2px;background:linear-gradient(90deg,#8B5CF6,#C026D3);transition:width .15s"></div>
@@ -765,107 +896,200 @@ function vProving(){
 // ---- VERDICT ----
 function vVerdict(){
   const v = S.verdict; if(!v) return "";
-  const c = S.blocked?"#C084FC":v.fs>=65?"#A855F7":v.fs>=45?"#FBBF24":"#FF6B8A";
+  const score = v.fs;
+  const c = S.blocked?"#C084FC":score>=65?"#A855F7":score>=45?"#FBBF24":"#FF6B8A";
+  const cDim = S.blocked?"rgba(192,132,252,.18)":score>=65?"rgba(168,85,247,.18)":score>=45?"rgba(251,191,36,.18)":"rgba(255,107,138,.18)";
   const title = S.inp.name || "Your Startup";
   const godLeft = 3 - S.godCount;
 
+  // Gauge arc for verdict — same arc, fill = score%
+  const arcLen = 282.7;
+  const vOffset = arcLen - (score / 100) * arcLen;
+  const needleRot = -90 + score * 1.8;
+
   return `${hdr()}<div class="mn fi">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+
+    <!-- Top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <button class="bt-bk" onclick="go('home')" style="margin:0">← Home</button>
-      <button class="bt" onclick="generatePDF()" style="padding:8px 16px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2);color:#A855F7;font-size:11px;display:flex;align-items:center;gap:6px">
-        <span>📄</span> Download Pitch Report
+      <button class="bt" onclick="generatePDF()" style="padding:7px 14px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.18);color:rgba(168,85,247,.7);font-size:10px;display:flex;align-items:center;gap:6px;border-radius:20px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Download Report
       </button>
     </div>
 
-    ${S.contested?`<div class="contested-banner" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);color:#FBBF24">⚡ CONTESTED VERDICT — Swarm was divided</div>`:""}
-    ${S.blocked?`<div class="contested-banner" style="background:rgba(192,132,252,.05);border:1px solid rgba(192,132,252,.2);color:#C084FC">🚫 BLOCKED — Regulatory risk flagged by Policy Scan</div>`:""}
+    ${S.contested?`<div style="text-align:center;font-size:8.5px;font-weight:800;color:#FBBF24;letter-spacing:.18em;margin-bottom:12px">CONTESTED VERDICT — SWARM WAS DIVIDED</div>`:""}
+    ${S.blocked?`<div style="text-align:center;font-size:8.5px;font-weight:800;color:#C084FC;letter-spacing:.18em;margin-bottom:12px">BLOCKED — REGULATORY RISK FLAGGED</div>`:""}
 
-    <div class="pn vb" style="margin-bottom:16px;border-color:${c}12">
-      <div style="font-size:9px;color:rgba(168,85,247,.28);letter-spacing:.18em;margin-bottom:4px;font-weight:700">SWARM VERDICT</div>
-      <div style="font-size:15px;font-weight:800;color:rgba(224,244,255,.8);margin-bottom:8px">${esc(title)}</div>
-      <div style="font-size:50px;font-weight:800;color:${c}">${v.fs}<span style="font-size:18px;opacity:.35">/100</span></div>
-      <div style="font-size:14px;font-weight:800;color:${c};margin-top:3px">${v.vd}</div>
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap">
-        <span style="font-size:9px;color:rgba(200,230,240,.3)">🔄 ${S.flips} stance flip${S.flips!==1?"s":""}</span>
-        ${S.consensus!==null?`<span style="font-size:9px;color:rgba(200,230,240,.3)">🤝 ${S.consensus}% consensus</span>`:""}
-        <span style="font-size:9px;color:rgba(200,230,240,.3)">🤖 ${DEMO_AGENTS.length} agents · ${PILLARS.length} pillars</span>
+    <!-- HERO: RPM gauge showing score -->
+    <div style="text-align:center;padding:10px 0 24px;position:relative">
+      <div style="font-size:8px;font-weight:800;color:rgba(168,85,247,.3);letter-spacing:.22em;margin-bottom:6px">SWARM VERDICT</div>
+      <div style="font-size:22px;font-weight:800;color:#E0D8FF;margin-bottom:16px;letter-spacing:.02em">${esc(title)}</div>
+
+      <svg viewBox="0 0 280 160" width="320" height="183" style="overflow:visible;display:block;margin:0 auto">
+        <defs>
+          <linearGradient id="vGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="${score>=65?"#4C1D95":score>=45?"#92400E":"#7f1d1d"}"/>
+            <stop offset="45%" stop-color="${score>=65?"#7C3AED":score>=45?"#D97706":"#DC2626"}"/>
+            <stop offset="100%" stop-color="${c}"/>
+          </linearGradient>
+          <filter id="vGaugeGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="vNeedleGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="scoreGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Outer ambient ring -->
+        <circle cx="140" cy="135" r="108" fill="none" stroke="${cDim}" stroke-width="1" opacity=".4"/>
+        <!-- Track -->
+        <path d="M 32,135 A 108,108 0 0 1 248,135" fill="none" stroke="rgba(139,92,246,.08)" stroke-width="13" stroke-linecap="round"/>
+        <!-- Score arc -->
+        <path d="M 32,135 A 108,108 0 0 1 248,135" fill="none" stroke="url(#vGaugeGrad)" stroke-width="13" stroke-linecap="round"
+          stroke-dasharray="${(arcLen*108/90).toFixed(1)}" stroke-dashoffset="${((arcLen*108/90)*(1-score/100)).toFixed(1)}"
+          style="filter:url(#vGaugeGlow)"/>
+        <!-- Tick marks -->
+        ${[0,1,2,3,4,5,6,7,8,9,10].map(i=>{
+          const ang=-180+i*(180/10), rad=ang*Math.PI/180, cx=140,cy=135,r=108;
+          const x1=(cx+r*Math.cos(rad)).toFixed(1),y1=(cy+r*Math.sin(rad)).toFixed(1);
+          const x2=(cx+(r-(i%2===0?14:9))*Math.cos(rad)).toFixed(1),y2=(cy+(r-(i%2===0?14:9))*Math.sin(rad)).toFixed(1);
+          const maj=i%2===0;
+          return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${maj?"rgba(192,132,252,.45)":"rgba(139,92,246,.18)"}" stroke-width="${maj?1.5:.7}"/>`;
+        }).join("")}
+        <!-- Tick labels -->
+        ${[0,25,50,75,100].map(v2=>{
+          const ang=(-180+v2*1.8)*Math.PI/180, cx=140,cy=135,r=88;
+          const lx=(cx+r*Math.cos(ang)).toFixed(1),ly=(cy+r*Math.sin(ang)+4).toFixed(1);
+          return `<text x="${lx}" y="${ly}" text-anchor="middle" style="font-size:8px;fill:rgba(168,85,247,.3);font-family:'JetBrains Mono',monospace">${v2}</text>`;
+        }).join("")}
+        <!-- Needle -->
+        <g style="transform-origin:140px 135px;transform:rotate(${needleRot}deg)">
+          <line x1="140" y1="135" x2="140" y2="42" stroke="${c}" stroke-width="2" stroke-linecap="round" style="filter:url(#vNeedleGlow)"/>
+          <circle cx="140" cy="135" r="7" fill="${c}" opacity=".9"/>
+          <circle cx="140" cy="135" r="4" fill="#0D0B1E"/>
+        </g>
+        <!-- Score text (glowing) -->
+        <text x="140" y="122" text-anchor="middle" style="font-size:42px;font-weight:800;fill:${c};font-family:'DM Sans',sans-serif;filter:url(#scoreGlow)">${score}</text>
+        <text x="140" y="140" text-anchor="middle" style="font-size:13px;font-weight:800;fill:${c};letter-spacing:.06em;font-family:'DM Sans',sans-serif;opacity:.85">${v.vd}</text>
+        <text x="140" y="155" text-anchor="middle" style="font-size:7px;font-weight:700;fill:rgba(168,85,247,.35);letter-spacing:.2em;font-family:'DM Sans',sans-serif">SWARM INTENSITY</text>
+      </svg>
+
+      <!-- Stats row -->
+      <div style="display:flex;gap:20px;justify-content:center;margin-top:4px;flex-wrap:wrap">
+        <span style="font-size:9px;color:rgba(200,210,240,.25);font-family:'JetBrains Mono',monospace">${S.flips} flip${S.flips!==1?"s":""}</span>
+        ${S.consensus!==null?`<span style="font-size:9px;color:rgba(200,210,240,.25);font-family:'JetBrains Mono',monospace">${S.consensus}% consensus</span>`:""}
+        <span style="font-size:9px;color:rgba(200,210,240,.25);font-family:'JetBrains Mono',monospace">${DEMO_AGENTS.length} agents · ${PILLARS.length} pillars</span>
       </div>
-      ${S.tx?`<a href="https://sepolia.starkscan.co/tx/${S.tx}" target="_blank" style="text-decoration:none;margin-top:12px;display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:18px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.12)">
-        <span style="font-size:9px;color:#A78BFA;font-weight:700">⬡ Verified on StarkNet</span>
-        <span style="font-size:8px;color:rgba(167,139,250,.4);font-family:'JetBrains Mono',monospace">${S.tx.slice(0,10)}...${S.tx.slice(-6)}</span>
-      </a>`:`<div style="margin-top:10px;font-size:9px;color:rgba(167,139,250,.25)">⏳ Publishing to StarkNet...</div>`}
+
+      <!-- StarkNet link -->
+      ${S.tx?`<a href="https://sepolia.starkscan.co/tx/${S.tx}" target="_blank" style="text-decoration:none;margin-top:14px;display:inline-flex;align-items:center;gap:6px;padding:6px 18px;border-radius:20px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.1)">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span style="font-size:9px;color:#A78BFA;font-weight:700;letter-spacing:.06em">Verified on StarkNet</span>
+        <span style="font-size:8px;color:rgba(167,139,250,.3);font-family:'JetBrains Mono',monospace">${S.tx.slice(0,10)}…${S.tx.slice(-6)}</span>
+      </a>`:`<div style="margin-top:12px;font-size:8.5px;color:rgba(167,139,250,.18);letter-spacing:.1em">Publishing to StarkNet...</div>`}
     </div>
 
-    <div class="g2" style="margin-bottom:16px">
-      ${PILLARS.map(p=>{const sc=S.pS[p.key]||0;return`<div class="pn" style="padding:13px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:10px;font-weight:700;color:${p.color}">${p.icon} ${p.label.split("&")[0].trim()}</span>
-          <span style="font-size:18px;font-weight:800;color:${p.color}">${sc}</span>
-        </div>
-        <div class="pg" style="height:3px"><div class="pf" style="width:${sc}%;background:${p.color};opacity:.5"></div></div>
-      </div>`;}).join("")}
+    <!-- Pillar scores — no boxes, just clean rows -->
+    <div style="max-width:520px;margin:0 auto 28px;padding:0 8px">
+      <div style="font-size:8px;font-weight:800;color:rgba(168,85,247,.25);letter-spacing:.2em;margin-bottom:14px;text-align:center">PILLAR BREAKDOWN</div>
+      ${PILLARS.map(p=>{
+        const sc=S.pS[p.key]||0;
+        return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <span style="font-size:9px;font-weight:700;color:${p.color};letter-spacing:.08em;min-width:120px;text-align:right">${p.label.split("&")[0].trim().toUpperCase()}</span>
+          <div style="flex:1;height:3px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${sc}%;background:linear-gradient(90deg,${p.color}55,${p.color});border-radius:2px;box-shadow:0 0 8px ${p.color}40;transition:width .8s ease"></div>
+          </div>
+          <span style="font-size:15px;font-weight:800;color:${p.color};min-width:28px;font-family:'JetBrains Mono',monospace">${sc}</span>
+        </div>`;
+      }).join("")}
     </div>
 
-    <!-- God View -->
-    <div class="pn" style="border-color:rgba(167,139,250,.08);margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:16px">👁️</span>
-          <h3 style="font-size:13px;font-weight:800;color:#A78BFA;margin:0">God View</h3>
+    <!-- God View — no box -->
+    <div style="max-width:560px;margin:0 auto 28px;border-top:1px solid rgba(139,92,246,.08);padding-top:22px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <span style="font-size:11px;font-weight:800;color:#A78BFA;letter-spacing:.04em">God View</span>
+          <span style="font-size:8.5px;color:rgba(167,139,250,.35);margin-left:10px">Alter reality — swarm re-evaluates</span>
         </div>
-        <span style="font-size:9px;color:${godLeft>0?"rgba(167,139,250,.4)":"rgba(255,107,138,.5)"};font-weight:700">${godLeft} re-sim${godLeft!==1?"s":""} left</span>
+        <span style="font-size:8.5px;font-weight:700;color:${godLeft>0?"rgba(167,139,250,.4)":"rgba(255,107,138,.4)"};font-family:'JetBrains Mono',monospace">${godLeft}/3 left</span>
       </div>
-      <p style="font-size:10px;color:rgba(167,139,250,.3);margin-bottom:10px">Alter reality — the swarm re-evaluates under changed conditions.</p>
 
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
         ${["Amazon enters your market","OpenAI builds this natively","You pivot to B2B","Regulation bans core feature","Competitor raises $50M"].map(s=>
-          `<button onclick="setScenario('${s.replace(/'/g,"\\'")}',this)" class="bt" style="font-size:8px;padding:4px 8px;background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.1);color:rgba(167,139,250,.5)">${s}</button>`
+          `<button onclick="setScenario('${s.replace(/'/g,"\\'")}',this)" class="bt" style="font-size:8px;padding:4px 9px;background:transparent;border:1px solid rgba(167,139,250,.1);color:rgba(167,139,250,.45);border-radius:14px">${s}</button>`
         ).join("")}
       </div>
 
       <div style="display:flex;gap:7px">
-        <input class="gvi" id="gvIn" ${godLeft===0?"disabled":""} placeholder="${godLeft===0?"God View limit reached (3/3)":"Type a what-if scenario or pick one above..."}"/>
-        <button class="bt" id="gvBtn" ${godLeft===0?"disabled":""} style="padding:10px 14px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:#A78BFA;font-size:10px;white-space:nowrap;${godLeft===0?"opacity:.3":""}">
-          🌀 Re-simulate
+        <input class="gvi" id="gvIn" ${godLeft===0?"disabled":""} placeholder="${godLeft===0?"Limit reached (3/3)":"What-if scenario..."}"/>
+        <button class="bt" id="gvBtn" ${godLeft===0?"disabled":""} style="padding:9px 14px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.15);color:#A78BFA;font-size:10px;white-space:nowrap;border-radius:10px;${godLeft===0?"opacity:.3":""}">
+          Re-simulate
         </button>
       </div>
 
-      ${S.godH.length?`<div style="margin-top:10px;border-top:1px solid rgba(167,139,250,.06);padding-top:8px">
-        ${S.godH.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:6px;background:rgba(167,139,250,.02);margin-bottom:3px">
-          <span style="font-size:9px;color:rgba(200,230,240,.3);flex:1">🌀 ${esc(h.sc)}</span>
-          <span style="font-size:11px;font-weight:800;color:${h.c};margin-left:8px">${h.s}/100</span>
-          <span style="font-size:8px;color:rgba(200,230,240,.2);margin-left:6px">${h.delta>0?"+":""} ${h.delta} pts</span>
+      ${S.godH.length?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(167,139,250,.05)">
+        ${S.godH.map(h=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(167,139,250,.04)">
+          <span style="font-size:9px;color:rgba(200,230,240,.28);flex:1;font-style:italic">${esc(h.sc)}</span>
+          <span style="font-size:13px;font-weight:800;color:${h.c};font-family:'JetBrains Mono',monospace">${h.s}</span>
+          <span style="font-size:9px;font-weight:700;color:${h.delta>0?"#00FFD4":"#FF6B8A"};font-family:'JetBrains Mono',monospace;min-width:40px;text-align:right">${h.delta>0?"+":""}${h.delta}</span>
         </div>`).join("")}
       </div>`:""}
     </div>
 
-    <!-- Transcript -->
-    <div class="pn">
-      <div style="font-size:11px;font-weight:800;color:#A855F7;margin-bottom:10px">🧠 War Room Transcript</div>
-      <div class="ms" style="max-height:260px">
+    <!-- Transcript — no box -->
+    <div style="max-width:560px;margin:0 auto 24px;border-top:1px solid rgba(139,92,246,.08);padding-top:18px">
+      <div style="font-size:8px;font-weight:800;color:rgba(168,85,247,.25);letter-spacing:.2em;margin-bottom:12px">WAR ROOM TRANSCRIPT</div>
+      <div class="ms" style="max-height:240px">
         ${S.log.map(renderLogItem).join("")}
       </div>
     </div>
 
-    <div style="text-align:center;padding:16px 0 8px;font-size:9px;color:rgba(255,255,255,.1);font-weight:600">
-      Powered by <span style="color:rgba(167,139,250,.4)">StarkNet</span> · <span style="color:rgba(167,139,250,.3)">StarkZap</span>
+    <div style="text-align:center;padding:10px 0 16px;font-size:8px;color:rgba(255,255,255,.07);letter-spacing:.1em">
+      POWERED BY STARKNET
     </div>
   </div>`;
 }
 
 function renderLogItem(msg){
-  if(msg.type==="pillar_start") return `<div class="log-pillar" style="color:${msg.color};border-color:${msg.color}30;background:${msg.color}04;font-size:8px;margin-top:4px">${msg.icon||""} ${(msg.label||"").toUpperCase()} ${msg.round?`· ROUND ${msg.round}`:""}</div>`;
-  if(msg.type==="round_complete") return `<div class="log-round">── ROUND ${msg.round} COMPLETE ──</div>`;
-  if(msg.type==="graph_built") return `<div class="log-graph">📊 Graph: ${msg.domain||""} · ${msg.market_stage||""} · ${msg.business_model||""}</div>`;
-  if(msg.type==="agent_result") return `<div class="log-vote log-item" style="border-color:${msg.agent_color||"rgba(255,255,255,.04)"}0C">
-    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-      <span style="font-size:12px">${msg.agent_avatar||"🤖"}</span>
-      <span style="font-size:9px;font-weight:700;color:${msg.agent_color||"#E0D8FF"}">${msg.agent_name||""}</span>
-      ${msg.flipped?`<span style="font-size:8px;color:#FBBF24;font-weight:700">↩ FLIPPED</span>`:""}
-      <span style="margin-left:auto;font-size:8px;padding:1px 6px;border-radius:10px;font-weight:700;${msg.stance==="bullish"?"background:rgba(139,92,246,.06);color:#A855F7":"background:rgba(255,107,138,.06);color:#FF6B8A"}">${msg.stance==="bullish"?"▲":"▼"} ${msg.confidence}%</span>
-    </div>
-    <div style="font-size:9.5px;color:rgba(200,230,240,.45);line-height:1.45">${esc(msg.reasoning||"")}</div>
-  </div>`;
+  // Find codename for this agent
+  const agentKey = Object.keys(ALL_AGENTS).find(k=>ALL_AGENTS[k].id===msg.agent_id);
+  const codename = (agentKey && ALL_AGENTS[agentKey].codename) || msg.agent_handle || (msg.agent_name||"").split(" ")[1] || "AGENT";
+  const ac = msg.agent_color || "#A855F7";
+
+  if(msg.type==="pillar_start"){
+    const labels={market:"MARKET",revenue:"REVENUE",adoption:"ADOPTION",competition:"WARFARE"};
+    const lbl = labels[msg.pillar]||(msg.label||"").split(" ")[0].toUpperCase();
+    return `<div style="margin:8px 0 4px;display:flex;align-items:center;gap:6px">
+      <div style="flex:1;height:1px;background:${msg.color}22"></div>
+      <span style="font-size:7px;font-weight:800;color:${msg.color};letter-spacing:.18em;font-family:'JetBrains Mono',monospace">${lbl} ${msg.round?`R${msg.round}`:""}</span>
+      <div style="flex:1;height:1px;background:${msg.color}22"></div>
+    </div>`;
+  }
+  if(msg.type==="round_complete"){
+    return `<div style="text-align:center;padding:5px 0;font-size:7px;font-weight:800;color:rgba(168,85,247,.3);letter-spacing:.2em;font-family:'JetBrains Mono',monospace">ROUND ${msg.round} COMPLETE</div>`;
+  }
+  if(msg.type==="graph_built"){
+    return `<div style="font-size:7.5px;color:rgba(168,85,247,.35);font-family:'JetBrains Mono',monospace;padding:3px 0">${(msg.domain||"").toUpperCase()} · ${(msg.market_stage||"").toUpperCase()}</div>`;
+  }
+  if(msg.type==="agent_result"){
+    const bull = msg.stance==="bullish";
+    const stanceColor = bull?"#00FFD4":"#FF6B8A";
+    const stanceLabel = bull?"BULL":"BEAR";
+    return `<div style="padding:6px 0;border-bottom:1px solid rgba(139,92,246,.05)">
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:3px">
+        <span style="font-size:8.5px;font-weight:800;color:${ac};font-family:'JetBrains Mono',monospace;letter-spacing:.06em">${codename}</span>
+        ${msg.flipped?`<span style="font-size:7px;font-weight:800;color:#FBBF24;margin-left:5px;letter-spacing:.05em">FLIP</span>`:""}
+        <span style="margin-left:auto;font-size:7.5px;font-weight:800;color:${stanceColor};font-family:'JetBrains Mono',monospace">${stanceLabel} ${msg.confidence}%</span>
+      </div>
+      <div style="font-size:8px;color:rgba(200,220,255,.32);line-height:1.5;font-family:'DM Sans',sans-serif">${esc((msg.reasoning||"").slice(0,80))}${(msg.reasoning||"").length>80?"…":""}</div>
+    </div>`;
+  }
   return "";
 }
 
@@ -950,13 +1174,27 @@ function initBubbleState(){
 }
 
 function initBubbleDom(){
-  // Bubbles are pre-rendered in vSim, just ensure positions are set
+  const group = $("connGroup");
+  if(group){
+    group.innerHTML = "";
+    // Flashable agent→center lines (flash when agent fires)
+    Object.values(S.bubbles).forEach(b => {
+      const ln = document.createElementNS("http://www.w3.org/2000/svg","line");
+      ln.setAttribute("id","conn-"+b.agent.id);
+      ln.setAttribute("x1", b.baseX+"%");
+      ln.setAttribute("y1", b.baseY+"%");
+      ln.setAttribute("x2","50%");
+      ln.setAttribute("y2","50%");
+      ln.setAttribute("stroke","rgba(139,92,246,.05)");
+      ln.setAttribute("stroke-width","0.6");
+      ln.style.transition = "stroke .3s,stroke-width .3s,filter .3s";
+      group.appendChild(ln);
+    });
+  }
+  // Set bubble positions from state
   Object.values(S.bubbles).forEach(b => {
     const el = $("bubble-"+b.agent.id);
-    if(el){
-      el.style.left = b.baseX + "%";
-      el.style.top  = b.baseY + "%";
-    }
+    if(el){ el.style.left = b.baseX+"%"; el.style.top = b.baseY+"%"; }
   });
 }
 
@@ -973,24 +1211,72 @@ function updateBubbleDom(msg){
   b.stance     = msg.stance;
   b.confidence = msg.confidence;
 
-  const color  = msg.stance === "bullish" ? "#00FFD4" : "#FF6B8A";
-  const size   = 36 + (msg.confidence - 40) * 0.75; // 36–75px
+  const color = msg.stance === "bullish" ? "#00FFD4" : "#FF6B8A";
+  const size  = 82 + (msg.confidence - 40) * 0.9; // 82–118px
 
   el.style.width       = size+"px";
   el.style.height      = size+"px";
-  el.style.marginLeft  = -(size/2)+"px";
-  el.style.marginTop   = -(size/2)+"px";
-  el.style.background  = `radial-gradient(circle at 35% 35%, ${color}55, ${color}15)`;
-  el.style.borderColor = color+"55";
+  el.style.border      = `3px solid ${color}65`;
+  el.style.background  = `radial-gradient(circle at 38% 32%, ${color}1a, rgba(6,7,20,.78))`;
+  el.style.boxShadow   = `0 0 35px ${color}30, 0 0 70px ${color}10, inset 0 0 18px ${color}08`;
   el.style.opacity     = "1";
   el.classList.add("active");
+  // Fire ring burst
+  el.style.animation = `agentFireRing .6s ease-out, float${b.idx%6} ${4.5+b.idx*.45}s ${b.idx*.35}s ease-in-out infinite`;
 
   if(conf_el){ conf_el.textContent = msg.confidence+"%"; conf_el.style.color = color; }
   if(tt_el)  { tt_el.textContent = msg.reasoning || ""; }
 
+  // Connection line flash
+  const ln = $("conn-"+msg.agent_id);
+  if(ln){
+    ln.setAttribute("stroke", color);
+    ln.setAttribute("stroke-width","1.5");
+    ln.style.filter = `drop-shadow(0 0 4px ${color})`;
+    ln.setAttribute("stroke-dasharray","0");
+    setTimeout(()=>{
+      ln.setAttribute("stroke","rgba(139,92,246,.1)");
+      ln.setAttribute("stroke-width","1");
+      ln.style.filter = "none";
+      ln.setAttribute("stroke-dasharray","5 9");
+    }, 700);
+  }
+
+  // Pitch node score update
+  const ps = $("pitchScore"); if(ps) ps.textContent = Math.round(S.prog)+"%";
+
+  // Speech pop — floating reasoning text near bubble
+  if(msg.reasoning){
+    const layer = $("speechLayer");
+    if(layer){
+      const bx = parseFloat(el.getAttribute("data-bx")||b.baseX);
+      const by = parseFloat(el.getAttribute("data-by")||b.baseY);
+      const onLeft = bx < 52;
+      const sp = document.createElement("div");
+      sp.style.cssText = `
+        position:absolute;
+        ${onLeft?"left:"+(bx+7)+"%;":"right:"+(100-bx+7)+"%;"}
+        top:${Math.max(5,by-10)}%;
+        transform:translateY(-50%);
+        max-width:175px;min-width:120px;
+        background:rgba(6,7,20,.93);
+        border:1px solid ${color}28;
+        border-radius:10px;padding:8px 11px;
+        font-size:9px;color:rgba(220,210,255,.72);
+        font-family:'DM Sans',sans-serif;line-height:1.55;
+        z-index:15;pointer-events:none;
+        box-shadow:0 4px 22px rgba(0,0,0,.45);
+        animation:speechPop .25s ease;
+      `;
+      sp.innerHTML = `<span style="font-size:8px;font-weight:800;color:${color};display:block;margin-bottom:3px;letter-spacing:.06em">${msg.agent_handle||b.agent.codename||''} · ${msg.stance?.toUpperCase()||''}</span>${(msg.reasoning||'').slice(0,110)}${(msg.reasoning||'').length>110?'…':''}`;
+      layer.appendChild(sp);
+      setTimeout(()=>{ sp.style.animation="speechFade .5s ease forwards"; setTimeout(()=>sp.remove(),500); }, 3800);
+    }
+  }
+
   if(isFlip){
     el.classList.remove("flipping");
-    void el.offsetWidth; // reflow
+    void el.offsetWidth;
     el.classList.add("flipping");
     setTimeout(()=>el.classList.remove("flipping"), 450);
   }
@@ -1040,17 +1326,25 @@ function setStatus(text){
 function updateProgress(done, total){
   S.prog = (done/total)*100;
   S.nA   = done;
-  const el = $(`pg-${S.currentPillar}`);
-  // Update pillar progress bars proportionally
   PILLARS.forEach((p, i) => {
     const bar = $("pg-"+p.key);
     if(!bar) return;
-    const pillarsPerRound = PILLARS.length;
     const agentsPerPillar = DEMO_AGENTS.length;
-    // R1 progress per pillar
     const pillarDone = Math.min(Math.max(done - i*agentsPerPillar, 0), agentsPerPillar);
     bar.style.width = (pillarDone/agentsPerPillar)*100+"%";
   });
+  updateGauge(S.prog);
+}
+
+function updateGauge(pct){
+  pct = Math.min(Math.max(pct, 0), 100);
+  const arcLen = 282.7;
+  const arc = $("gaugeArc");
+  const needle = $("gaugeNeedle");
+  const pctEl = $("gaugePct");
+  if(arc)    arc.style.strokeDashoffset = arcLen - (pct/100)*arcLen;
+  if(needle) needle.style.transform = `rotate(${-90 + pct*1.8}deg)`;
+  if(pctEl)  pctEl.textContent = Math.round(pct);
 }
 
 function startSim(){
@@ -1126,7 +1420,8 @@ function handleWsEvent(msg, ws){
       S.prog = Math.min((S.nA / (6 * 4 * 2)) * 100, 99);
       updateBubbleDom(msg);
       appendLog(msg);
-      // Update progress bar
+      updateGauge(S.prog);
+      // Update pillar bar
       const bar = $("pg-"+msg.pillar);
       if(bar){ const cur = parseFloat(bar.style.width||"0"); bar.style.width = Math.min(cur+20, 100)+"%"; }
       break;
@@ -1210,6 +1505,7 @@ function offlineSim(scenario){
 
           done++;
           S.prog = (done/totalR)*100;
+          updateGauge(S.prog);
 
           // Update pillar bar
           const bar = $("pg-"+pillar.key);
