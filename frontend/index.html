@@ -336,6 +336,7 @@ function render(){
   bind();
   if(S.phase==="sim") initBubbleDom();
   if(S.phase==="connect") startTypewriter();
+  if(S.phase==="home") startHomeTypewriter();
 }
 
 function hdr(){
@@ -538,25 +539,24 @@ function vHome(){
         <span style="background:linear-gradient(135deg,#C084FC 20%,#7C3AED 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">survive the swarm?</span>
       </h1>
 
-      <p style="font-size:15px;font-weight:400;color:rgba(210,195,255,.55);margin:0 auto 36px;line-height:1.65;font-family:'DM Sans',sans-serif;max-width:420px">
-        Hundreds of AI agents with opposing agendas debate your pitch in real-time. The verdict is sealed on StarkNet. Forever.
+      <p id="home-sub" style="font-size:15px;font-weight:400;color:rgba(210,195,255,.5);margin:0 auto 36px;line-height:1.6;font-family:'DM Sans',sans-serif;max-width:460px;min-height:1.6em">
+        <span id="home-sub-text"></span><span id="home-sub-cur" style="color:#A855F7;animation:glowPulse 1s infinite">▌</span>
       </p>
 
       <button onclick="go('input')" style="
-        display:inline-flex;align-items:center;gap:12px;
-        padding:20px 48px;border-radius:50px;border:none;cursor:pointer;
+        display:inline-block;
+        padding:18px 52px;border-radius:6px;border:none;cursor:pointer;
         background:linear-gradient(135deg,#9333EA,#6D28D9);
-        color:#fff;font-size:17px;font-weight:700;font-family:'DM Sans',sans-serif;
-        box-shadow:0 0 60px rgba(147,51,234,.5),0 10px 32px rgba(0,0,0,.5);
-        transition:all .25s;letter-spacing:-.1px;margin-bottom:16px
-      " onmouseover="this.style.boxShadow='0 0 90px rgba(147,51,234,.7),0 12px 36px rgba(0,0,0,.6)';this.style.transform='translateY(-2px)'"
-         onmouseout="this.style.boxShadow='0 0 60px rgba(147,51,234,.5),0 10px 32px rgba(0,0,0,.5)';this.style.transform='none'">
-        <span style="font-size:20px">⚡</span>
-        Submit your pitch
+        color:#fff;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;
+        box-shadow:0 0 48px rgba(147,51,234,.45),0 8px 28px rgba(0,0,0,.45);
+        transition:all .25s;letter-spacing:.01em;margin-bottom:16px
+      " onmouseover="this.style.boxShadow='0 0 80px rgba(147,51,234,.65),0 10px 32px rgba(0,0,0,.6)';this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.boxShadow='0 0 48px rgba(147,51,234,.45),0 8px 28px rgba(0,0,0,.45)';this.style.transform='none'">
+        Throw your startup to the swarm
       </button>
 
-      <div style="font-size:11px;font-weight:400;color:rgba(168,85,247,.35);font-family:'DM Sans',sans-serif;letter-spacing:.02em">
-        Free · No sign-up · On-chain verdict in 60s
+      <div style="font-size:11px;font-weight:400;color:rgba(168,85,247,.3);font-family:'DM Sans',sans-serif;letter-spacing:.02em">
+        Free · No sign-up · On-chain in 60s
       </div>
     </div>
 
@@ -1338,6 +1338,22 @@ function startTypewriter(){
     ci++;
     if(ci>=divs[li].text.length){ divs[li].el.textContent=divs[li].text; li++; ci=0; setTimeout(tick,180); }
     else setTimeout(tick, ci===1?300:38);
+  }
+  tick();
+}
+
+function startHomeTypewriter(){
+  const el = $("home-sub-text");
+  const cur = $("home-sub-cur");
+  if(!el) return;
+  const text = "Your startup. 500 agents. One brutal verdict — on-chain.";
+  let i = 0;
+  function tick(){
+    if(!$("home-sub-text")) return;
+    el.textContent = text.slice(0, i);
+    i++;
+    if(i > text.length){ if(cur) cur.style.display="none"; return; }
+    setTimeout(tick, i===1 ? 400 : 36);
   }
   tick();
 }
