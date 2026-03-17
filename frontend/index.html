@@ -553,7 +553,7 @@ function vHome(){
   return `${hdr()}<div style="font-family:'DM Sans',sans-serif;position:relative;min-height:calc(100vh - 56px);display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden">
 
     <!-- BACKGROUND: bubble map, full bleed, faded -->
-    <div style="position:absolute;inset:0;z-index:1;pointer-events:none">
+    <div style="position:absolute;inset:0;z-index:1">
 
       <!-- ambient glow pools -->
       <div style="position:absolute;left:15%;top:20%;width:500px;height:400px;background:radial-gradient(ellipse,rgba(147,51,234,.07),transparent 70%)"></div>
@@ -578,12 +578,20 @@ function vHome(){
         </g>
       </svg>
 
-      <!-- Background agent orbs — faded, floating, no interaction -->
+      <!-- SVG + glows: no interaction -->
+      <!-- Background agent orbs — clickable, faded, floating -->
       ${bgOrbs.map((a,i)=>{
         const iconSz = Math.round(a.sz*.4);
+        const agentKey = Object.keys(ALL_AGENTS).find(k=>ALL_AGENTS[k].codename===a.role||ALL_AGENTS[k].name===a.name+' ');
+        // find matching agent by name field
+        const matchKey = Object.keys(ALL_AGENTS).find(k=>ALL_AGENTS[k].name.includes(a.name));
         return `<div style="position:absolute;left:${a.lx}%;top:${a.ly}%;transform:translateX(-50%);
-          opacity:.38;display:flex;flex-direction:column;align-items:center;
-          animation:float${a.fi} ${4.5+i*.28}s ${i*.15}s ease-in-out infinite">
+          opacity:.4;display:flex;flex-direction:column;align-items:center;cursor:pointer;
+          animation:float${a.fi} ${4.5+i*.28}s ${i*.15}s ease-in-out infinite;
+          transition:opacity .2s,transform .2s;z-index:2"
+          onmouseover="this.style.opacity='0.85';this.style.transform='translateX(-50%) scale(1.1)'"
+          onmouseout="this.style.opacity='0.4';this.style.transform='translateX(-50%) scale(1)'"
+          onclick="showAgentModal('${matchKey||Object.keys(ALL_AGENTS)[i]}')">
           <div style="width:${a.sz}px;height:${a.sz}px;border-radius:50%;
             background:radial-gradient(circle at 38% 35%,rgba(22,16,46,.9),rgba(8,6,20,.95));
             border:2.5px solid ${a.c}70;
@@ -591,14 +599,14 @@ function vHome(){
             display:flex;align-items:center;justify-content:center">
             <svg width="${iconSz}" height="${iconSz}" viewBox="0 0 24 24" stroke="${a.c}" fill="none">${a.ic}</svg>
           </div>
-          <div style="margin-top:5px;font-size:8px;font-weight:600;color:${a.c}80;font-family:'DM Sans',sans-serif;letter-spacing:.04em">${a.name}</div>
+          <div style="margin-top:5px;font-size:8px;font-weight:600;color:${a.c}90;font-family:'DM Sans',sans-serif;letter-spacing:.04em">${a.name}</div>
         </div>`;
       }).join("")}
 
-      <!-- extra ghost orbs -->
+      <!-- ghost orbs — no pointer events -->
       ${[[50,25,22],[12,95,18],[90,92,20],[48,50,16],[70,65,24],[30,50,14],[55,75,18]].map((p,i)=>`
         <div style="position:absolute;left:${p[0]}%;top:${p[1]}%;transform:translate(-50%,-50%);
-          width:${p[2]}px;height:${p[2]}px;border-radius:50%;
+          width:${p[2]}px;height:${p[2]}px;border-radius:50%;pointer-events:none;
           background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.07);
           filter:blur(.8px)"></div>
       `).join("")}
@@ -1422,6 +1430,71 @@ function startTypewriter(){
     else setTimeout(tick, ci===1?300:38);
   }
   tick();
+}
+
+function showAgentModal(key){
+  const a = ALL_AGENTS[key];
+  if(!a) return;
+  const mr = $("modal-root");
+  if(!mr) return;
+  mr.innerHTML = `
+    <div onclick="document.getElementById('modal-root').innerHTML=''" style="
+      position:fixed;inset:0;z-index:1000;
+      background:rgba(4,3,14,.7);backdrop-filter:blur(6px);
+      display:flex;align-items:center;justify-content:center;padding:20px">
+      <div onclick="event.stopPropagation()" style="
+        max-width:420px;width:100%;border-radius:20px;
+        background:linear-gradient(145deg,rgba(18,12,40,.97),rgba(8,6,20,.99));
+        border:1.5px solid ${a.c}40;
+        box-shadow:0 0 60px ${a.c}20,0 24px 64px rgba(0,0,0,.7);
+        padding:32px 28px 28px;position:relative;
+        animation:modalIn .25s ease">
+
+        <!-- close -->
+        <button onclick="document.getElementById('modal-root').innerHTML=''" style="
+          position:absolute;top:14px;right:14px;background:none;border:none;
+          color:rgba(200,185,255,.3);font-size:18px;cursor:pointer;line-height:1;
+          transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(200,185,255,.3)'">✕</button>
+
+        <!-- avatar -->
+        <div style="width:72px;height:72px;border-radius:50%;margin:0 auto 20px;
+          background:radial-gradient(circle at 35% 32%,${a.c}22,${a.c}05);
+          border:3px solid ${a.c}70;
+          box-shadow:0 0 32px ${a.c}35;
+          display:flex;align-items:center;justify-content:center">
+          <span style="font-size:28px;font-weight:900;color:${a.c};font-family:'JetBrains Mono',monospace">${a.av}</span>
+        </div>
+
+        <!-- intro -->
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:11px;font-weight:600;color:${a.c}99;letter-spacing:.18em;font-family:'DM Sans',sans-serif;margin-bottom:6px">${a.cat} · ${a.name}</div>
+          <div style="font-size:22px;font-weight:700;color:#F5F0FF;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;margin-bottom:4px">
+            Hey, I'm <span style="color:${a.c}">${a.codename}</span>.
+          </div>
+          <div style="font-size:13px;font-weight:400;color:rgba(200,185,255,.55);font-family:'DM Sans',sans-serif">${a.role}</div>
+        </div>
+
+        <!-- divider -->
+        <div style="height:1px;background:linear-gradient(90deg,transparent,${a.c}30,transparent);margin-bottom:18px"></div>
+
+        <!-- description -->
+        <p style="font-size:14px;font-weight:400;color:rgba(220,210,255,.7);font-family:'DM Sans',sans-serif;line-height:1.7;text-align:center;margin:0 0 20px">
+          ${a.desc}
+        </p>
+
+        <!-- CTA -->
+        <button onclick="document.getElementById('modal-root').innerHTML='';go('input')" style="
+          width:100%;padding:13px;border-radius:8px;border:none;cursor:pointer;
+          background:linear-gradient(135deg,${a.c}22,${a.c}10);
+          border:1px solid ${a.c}35;
+          color:${a.c};font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;
+          transition:all .2s;letter-spacing:.02em"
+          onmouseover="this.style.background='linear-gradient(135deg,${a.c}35,${a.c}18)'"
+          onmouseout="this.style.background='linear-gradient(135deg,${a.c}22,${a.c}10)'">
+          Throw your startup at ${a.codename} →
+        </button>
+      </div>
+    </div>`;
 }
 
 function startHomeTypewriter(){
