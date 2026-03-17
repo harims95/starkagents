@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>StarkAgents — Swarm Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Nunito',sans-serif;
+  background:linear-gradient(170deg,#060714 0%,#0D0B1E 35%,#0A0720 65%,#060714 100%);
+  color:#C4B5FD;
+  min-height:100vh;
+  position:relative;
+}
+
+/* Purple grid overlay */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(139,92,246,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,.045) 1px,transparent 1px);
+  background-size:52px 52px;
+  pointer-events:none;z-index:0;
+}
+
+/* Bottom wave glow — like the terrain in reference */
+body::before{
+  content:'';position:fixed;bottom:-60px;left:-10%;right:-10%;height:380px;
+  background:radial-gradient(ellipse at 50% 100%,rgba(139,92,246,.22) 0%,rgba(168,85,247,.12) 28%,rgba(192,38,211,.05) 52%,transparent 72%);
+  pointer-events:none;z-index:0;
+}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bubbleRise{0%{transform:translateY(0);opacity:0}10%{opacity:1}90%{opacity:.3}100%{transform:translateY(-100vh);opacity:0}}
+@keyframes float0{0%,100%{transform:translateY(0px) translateX(0px)}40%{transform:translateY(-10px) translateX(4px)}70%{transform:translateY(5px) translateX(-3px)}}
+@keyframes float1{0%,100%{transform:translateY(0px) translateX(0px)}35%{transform:translateY(-8px) translateX(-5px)}65%{transform:translateY(6px) translateX(4px)}}
+@keyframes float2{0%,100%{transform:translateY(0px) translateX(0px)}45%{transform:translateY(-12px) translateX(3px)}75%{transform:translateY(4px) translateX(-4px)}}
+@keyframes float3{0%,100%{transform:translateY(0px) translateX(0px)}30%{transform:translateY(-7px) translateX(-3px)}60%{transform:translateY(8px) translateX(5px)}}
+@keyframes float4{0%,100%{transform:translateY(0px) translateX(0px)}50%{transform:translateY(-11px) translateX(6px)}80%{transform:translateY(3px) translateX(-2px)}}
+@keyframes float5{0%,100%{transform:translateY(0px) translateX(0px)}42%{transform:translateY(-9px) translateX(-4px)}72%{transform:translateY(7px) translateX(3px)}}
+@keyframes waveFlow{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes bubbleAppear{from{transform:scale(0) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+@keyframes flipPop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(168,85,247,.5)}70%{box-shadow:0 0 0 14px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
+@keyframes alertPulse{0%,100%{border-color:rgba(255,68,102,.05)}50%{border-color:rgba(255,68,102,.35)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes glowPulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* Animated bottom wave line */
+.wave-wrap{position:fixed;bottom:0;left:0;right:0;height:110px;pointer-events:none;z-index:1;overflow:hidden;opacity:.55}
+.wave-svg{position:absolute;bottom:0;width:200%;animation:waveFlow 10s linear infinite}
+.wave-svg2{position:absolute;bottom:0;width:200%;animation:waveFlow 14s linear infinite reverse;opacity:.5}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(139,92,246,.15);border-radius:2px}
+input::placeholder,textarea::placeholder{color:rgba(168,85,247,.2)}
+.fi{animation:fadeIn .3s ease}.fu{animation:fadeUp .5s ease}
+
+.bubs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bub{position:absolute;bottom:-20px;border-radius:50%}
+
+header{
+  padding:12px 22px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(139,92,246,.1);
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,7,20,.9);backdrop-filter:blur(18px);
+}
+.logo{display:flex;align-items:center;gap:9px;cursor:pointer}
+.logo h1{font-size:15px;font-weight:800;color:#fff}.logo h1 b{color:#A855F7}
+.logo small{font-size:7px;color:rgba(168,85,247,.4);letter-spacing:.2em;display:block;margin-top:-1px}
+.wbadge{padding:5px 12px;border-radius:18px;font-size:10px;font-weight:600;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.18);color:#C084FC;font-family:'JetBrains Mono',monospace}
+
+.mn{max-width:900px;margin:0 auto;padding:20px 16px;position:relative;z-index:10}
+.pn{
+  padding:20px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(18,16,42,.85),rgba(13,11,30,.9));
+  border:1px solid rgba(139,92,246,.1);
+  transition:all .25s;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+}
+.pn:hover{border-color:rgba(139,92,246,.18)}
+
+.bt{border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all .2s;border-radius:12px}
+.bt:disabled{cursor:default;opacity:.35}
+.bt:active{transform:scale(.97)}
+.bt-go{
+  padding:14px;width:100%;font-size:14px;font-weight:800;border-radius:12px;
+  background:linear-gradient(135deg,#8B5CF6,#A855F7);
+  color:#fff;border:none;
+  box-shadow:0 0 24px rgba(139,92,246,.35),0 4px 12px rgba(0,0,0,.3);
+  transition:all .25s;
+}
+.bt-go:hover{box-shadow:0 0 36px rgba(168,85,247,.5),0 4px 16px rgba(0,0,0,.4);transform:translateY(-1px)}
+.bt-bk{background:none;border:none;color:rgba(168,85,247,.4);font-size:12px;padding:0;font-weight:700;margin-bottom:16px;cursor:pointer;font-family:inherit}
+.bt-bk:hover{color:rgba(168,85,247,.7)}
+
+.fd{margin-bottom:14px}
+.fd label{font-size:9px;color:rgba(168,85,247,.5);display:block;margin-bottom:5px;letter-spacing:.12em;font-weight:700}
+.fd input,.fd textarea{
+  width:100%;padding:10px 12px;border-radius:9px;
+  border:1px solid rgba(139,92,246,.1);
+  background:rgba(6,7,20,.7);
+  color:#E0D8FF;font-size:13px;font-family:'Nunito',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.fd input:focus,.fd textarea:focus{border-color:rgba(168,85,247,.35);box-shadow:0 0 0 3px rgba(139,92,246,.08)}
+.fd textarea{resize:vertical}
+
+/* War room bubbles */
+.bubble-arena{
+  position:relative;width:100%;height:280px;border-radius:14px;
+  background:radial-gradient(ellipse at 50% 60%,rgba(139,92,246,.06),rgba(6,7,20,.4));
+  border:1px solid rgba(139,92,246,.08);overflow:hidden;
+}
+.bubble-arena::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 100%,rgba(139,92,246,.1),transparent 70%);
+  pointer-events:none;
+}
+.agent-bubble{
+  position:absolute;border-radius:50%;
+  border:2px solid rgba(255,255,255,.04);
+  background:rgba(255,255,255,.02);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  cursor:pointer;
+  transition:background .6s,border-color .5s,width .4s,height .4s,left .8s,top .8s,box-shadow .5s;
+  opacity:.2;transform-origin:center center;
+}
+.agent-bubble.active{opacity:1;animation:bubbleAppear .4s ease forwards}
+.agent-bubble.flipping{animation:flipPop .4s ease}
+.agent-bubble:hover .bubble-tooltip{display:block}
+.bubble-av{font-size:14px;pointer-events:none;transition:font-size .4s}
+.bubble-conf{font-size:8px;font-weight:800;font-family:'JetBrains Mono',monospace;pointer-events:none;margin-top:1px}
+.bubble-tooltip{
+  display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  width:180px;background:rgba(6,7,20,.97);border:1px solid rgba(139,92,246,.2);border-radius:9px;
+  padding:8px 10px;font-size:9.5px;line-height:1.5;color:rgba(196,181,253,.7);
+  pointer-events:none;z-index:50;white-space:normal;text-align:left;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.bubble-tooltip b{color:#E0D8FF;font-size:10px;display:block;margin-bottom:3px}
+
+/* Log panel */
+.log-panel{display:flex;flex-direction:column;gap:5px;max-height:280px;overflow-y:auto;scroll-behavior:smooth}
+.log-item{padding:8px 11px;border-radius:9px;animation:fadeIn .25s ease}
+.log-pillar{font-size:9px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-left:2px solid;border-radius:0 7px 7px 0}
+.log-vote{background:rgba(18,16,42,.5);border:1px solid rgba(139,92,246,.07)}
+.log-flip{border-radius:7px;font-size:9px;font-weight:700;padding:4px 10px;text-align:center}
+.log-round{text-align:center;padding:6px;font-size:9px;font-weight:800;letter-spacing:.15em;color:rgba(168,85,247,.45);border-top:1px solid rgba(139,92,246,.08);border-bottom:1px solid rgba(139,92,246,.08);margin:3px 0}
+.log-graph{padding:7px 10px;border-radius:7px;font-size:9px;border:1px solid rgba(139,92,246,.1);color:rgba(168,85,247,.6);background:rgba(139,92,246,.04)}
+
+/* Status bar */
+.warroom-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;min-height:22px}
+.status-chip{font-size:9px;font-weight:700;padding:3px 9px;border-radius:12px;display:inline-flex;align-items:center;gap:4px}
+
+/* Misc */
+.ms{max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;scroll-behavior:smooth}
+.pg{height:4px;border-radius:2px;background:rgba(255,255,255,.04);overflow:hidden}
+.pf{height:100%;border-radius:2px;transition:width .5s}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
+.nf{position:fixed;top:14px;right:14px;z-index:1000;padding:9px 16px;border-radius:10px;backdrop-filter:blur(12px);font-size:11px;font-weight:600;animation:fadeIn .3s}
+.nf-ok{background:rgba(139,92,246,.1);border:1px solid rgba(168,85,247,.3);color:#C084FC}
+.nf-er{background:rgba(255,107,138,.1);border:1px solid rgba(255,107,138,.22);color:#FF6B8A}
+
+.vb{text-align:center;padding:30px 20px;position:relative;overflow:hidden}
+.gvi{flex:1;padding:10px 12px;border-radius:9px;border:1px solid rgba(139,92,246,.12);background:rgba(6,7,20,.7);color:#E0D8FF;font-size:11px;font-family:inherit;outline:none;transition:border-color .2s}
+.gvi:focus{border-color:rgba(168,85,247,.3)}
+.gvi:disabled{opacity:.35}
+
+/* StarkZap modal */
+.modal-bg{position:fixed;inset:0;background:rgba(6,7,20,.88);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal{
+  background:linear-gradient(135deg,#0F0D24,#0D0B1E);
+  border:1px solid rgba(139,92,246,.18);border-radius:20px;padding:30px;
+  max-width:360px;width:90%;animation:modalIn .3s ease;
+  box-shadow:0 0 60px rgba(139,92,246,.15),0 20px 60px rgba(0,0,0,.5);
+}
+.social-btn{
+  width:100%;padding:12px;border-radius:11px;
+  border:1px solid rgba(139,92,246,.15);background:rgba(139,92,246,.06);
+  color:#E0D8FF;font-size:13px;font-weight:700;font-family:inherit;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:all .2s;margin-bottom:9px;
+}
+.social-btn:hover{background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.3);box-shadow:0 0 16px rgba(139,92,246,.2)}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;border:1px solid rgba(139,92,246,.08);background:rgba(6,7,20,.5);cursor:pointer;user-select:none}
+.toggle{width:32px;height:17px;border-radius:9px;background:rgba(255,255,255,.08);position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:rgba(168,85,247,.5)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle.on::after{transform:translateX(15px)}
+
+/* Category groups */
+.cat-group{margin-bottom:10px}
+.cat-label{font-size:8px;font-weight:800;letter-spacing:.15em;color:rgba(168,85,247,.35);margin-bottom:5px}
+.agent-pills{display:flex;gap:4px;flex-wrap:wrap}
+.agent-pill{font-size:9px;padding:3px 9px;border-radius:14px;font-weight:600;white-space:nowrap}
+
+.contested-banner{padding:6px 12px;border-radius:8px;font-size:9px;font-weight:700;text-align:center;margin-bottom:8px}
+
+@media(max-width:640px){.g2{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.warroom-inner{flex-direction:column}.bubble-arena{height:200px}}
+</style>
+</head>
+<body>
+<div class="bubs" id="bubs"></div>
+
+<!-- Animated bottom wave -->
+<div class="wave-wrap">
+  <svg class="wave-svg" viewBox="0 0 1440 110" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,60 C180,20 360,100 540,60 C720,20 900,90 1080,55 C1260,20 1350,75 1440,50 L1440,110 L0,110 Z" fill="rgba(139,92,246,.07)"/>
+    <path d="M0,75 C200,40 400,95 600,65 C800,35 1000,85 1200,60 C1320,45 1380,70 1440,55 L1440,110 L0,110 Z" fill="rgba(168,85,247,.05)"/>
+    <path d="M0,55 C160,30 320,80 480,50 C640,20 800,70 960,45 C1120,20 1300,65 1440,40 L1440,110 L0,110 Z" fill="rgba(192,38,211,.04)"/>
+  </svg>
+  <svg class="wave-svg2" viewBox="0 0 1440 110" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,50 C240,90 480,20 720,60 C960,100 1200,30 1440,65 L1440,110 L0,110 Z" fill="rgba(139,92,246,.04)"/>
+  </svg>
+</div>
+
+<div id="nf" style="display:none"></div>
+<div id="modal-root"></div>
+<div id="app"></div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const API = "http://localhost:8000";
+const WS_URL = "ws://localhost:8000";
+
+// ============================================================
+// AGENT ROSTER (mirrors backend)
+// ============================================================
+const ALL_AGENTS = {
+  MarketPulse:  { id:"psi-2041",   name:"Agent Ψ-2041", role:"Market Demand Analyst",    cat:"MARKET INTELLIGENCE",    av:"🌊", c:"#00FFD4" },
+  TrendSeeker:  { id:"omega-trend",name:"Agent Ω-8873", role:"Trend & Timing Specialist", cat:"MARKET INTELLIGENCE",    av:"📈", c:"#34D399" },
+  UnitEcon:     { id:"delta-1159", name:"Agent Δ-1159", role:"Unit Economics Analyst",    cat:"FINANCIAL ANALYSIS",     av:"💰", c:"#FBBF24" },
+  RevenueScout: { id:"sigma-rev",  name:"Agent Σ-4420", role:"Business Model Evaluator",  cat:"FINANCIAL ANALYSIS",     av:"💎", c:"#F59E0B" },
+  FirstClick:   { id:"lambda-7766",name:"Agent Λ-7766", role:"Early Adopter Simulator",   cat:"USER PSYCHOLOGY",        av:"🎯", c:"#38BDF8" },
+  StickyLoop:   { id:"phi-3302",   name:"Agent Φ-3302", role:"Retention & Habit Analyst", cat:"USER PSYCHOLOGY",        av:"🔄", c:"#818CF8" },
+  RedTeam:      { id:"theta-9915", name:"Agent Θ-9915", role:"Competitor Simulator",      cat:"COMPETITIVE WARFARE",    av:"⚔️", c:"#F87171" },
+  MoatInspector:{ id:"xi-5508",   name:"Agent Ξ-5508", role:"Defensibility Analyst",     cat:"COMPETITIVE WARFARE",    av:"🛡️", c:"#FB923C" },
+  BuildCheck:   { id:"pi-6641",    name:"Agent Π-6641", role:"Technical Architect",       cat:"TECHNICAL FEASIBILITY",  av:"⚙️", c:"#94A3B8" },
+  PolicyScan:   { id:"zeta-1287",  name:"Agent Ζ-1287", role:"Regulatory Risk Analyst",   cat:"REGULATORY & COMPLIANCE",av:"📋", c:"#C084FC" },
+  ViralEngine:  { id:"kappa-3394", name:"Agent Κ-3394", role:"Growth Hacker",             cat:"GROWTH & DISTRIBUTION",  av:"🚀", c:"#4ADE80" },
+  SkepticalVC:  { id:"rho-5571",   name:"Agent Ρ-5571", role:"VC Devil's Advocate",       cat:"INVESTOR PERSPECTIVE",   av:"🦈", c:"#FF6B8A" },
+};
+
+// Demo agents (matches backend DEMO_AGENT_KEYS)
+const DEMO_KEYS = ["MarketPulse","UnitEcon","RedTeam","PolicyScan","ViralEngine","SkepticalVC"];
+const DEMO_AGENTS = DEMO_KEYS.map(k => ({...ALL_AGENTS[k], handle: k}));
+
+// Bubble positions (6 agents)
+const BUBBLE_POS = [
+  {x:12,y:18},{x:42,y:8},{x:72,y:16},
+  {x:15,y:62},{x:45,y:68},{x:75,y:58}
+];
+
+const PILLARS = [
+  {key:"market",    label:"Market Demand & Timing",    icon:"🌊",color:"#00FFD4"},
+  {key:"revenue",   label:"Revenue & Business Model",  icon:"💰",color:"#FBBF24"},
+  {key:"adoption",  label:"User Adoption & Retention", icon:"🎯",color:"#38BDF8"},
+  {key:"competition",label:"Competitive Survival",     icon:"⚔️",color:"#F472B6"},
+];
+
+const FIELDS = [
+  {key:"name",   label:"STARTUP NAME",         ph:"e.g. StarkAgents, Nebula AI, FreshFleet"},
+  {key:"problem",label:"PROBLEM YOU'RE SOLVING",ph:"What pain point are you addressing?",multi:true},
+  {key:"solution",label:"YOUR SOLUTION",        ph:"How does your product solve this?",multi:true},
+  {key:"market", label:"TARGET MARKET",         ph:"e.g. SMB founders, Gen Z creators, enterprise HR teams"},
+  {key:"model",  label:"BUSINESS MODEL",        ph:"e.g. SaaS $29/mo, marketplace 15% take rate, freemium"},
+];
+
+// Agent categories for display
+const CATEGORIES = [
+  { label:"MARKET INTELLIGENCE",     keys:["MarketPulse","TrendSeeker"] },
+  { label:"FINANCIAL ANALYSIS",      keys:["UnitEcon","RevenueScout"] },
+  { label:"USER PSYCHOLOGY",         keys:["FirstClick","StickyLoop"] },
+  { label:"COMPETITIVE WARFARE",     keys:["RedTeam","MoatInspector"] },
+  { label:"TECHNICAL FEASIBILITY",   keys:["BuildCheck"] },
+  { label:"REGULATORY & COMPLIANCE", keys:["PolicyScan"] },
+  { label:"GROWTH & DISTRIBUTION",   keys:["ViralEngine"] },
+  { label:"INVESTOR PERSPECTIVE",    keys:["SkepticalVC"] },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let S = {
+  phase:"connect",
+  wallet:null,
+  inp:{},
+  isPublic:true,
+  bubbles:{},          // agent_id → bubble state
+  log:[],              // war room log items
+  pS:{},               // pillar scores
+  verdict:null,
+  tx:null,
+  nA:0,
+  prog:0,
+  godH:[],             // god view history
+  godCount:0,          // god view uses (max 3)
+  scenario:null,
+  graph:null,
+  activeAgents:[],
+  currentRound:0,
+  consensus:null,
+  flips:0,
+  contested:false,
+  blocked:false,
+};
+
+const $ = s => document.getElementById(s);
+const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+let nfT;
+function notify(m,t){const n=$("nf");n.textContent="🧠 "+m;n.className="nf "+(t==="err"?"nf-er":"nf-ok");n.style.display="block";clearTimeout(nfT);nfT=setTimeout(()=>n.style.display="none",3500)}
+function go(p){S.phase=p;render()}
+
+// Background bubbles — purple themed
+!function(){const c=$("bubs");for(let i=0;i<14;i++){const d=document.createElement("div");d.className="bub";const s=2+Math.random()*5,o=.02+Math.random()*.05;const colors=["rgba(139,92,246,","rgba(168,85,247,","rgba(192,38,211,","rgba(109,40,217,"];const col=colors[~~(Math.random()*colors.length)];d.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${col}${o});box-shadow:0 0 ${s*2}px ${col}${o*2});animation:bubbleRise ${14+Math.random()*16}s ${Math.random()*20}s infinite linear`;c.appendChild(d)}}();
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(){
+  $("app").innerHTML = ({
+    connect:vConnect, home:vHome, input:vInput,
+    sim:vSim, proving:vProving, verdict:vVerdict
+  }[S.phase]||vConnect)();
+  bind();
+  if(S.phase==="sim") initBubbleDom();
+}
+
+function hdr(){
+  if(!S.wallet)return"";
+  return `<header>
+    <div class="logo" onclick="go('home')">
+      <span style="font-size:24px;filter:drop-shadow(0 0 8px rgba(168,85,247,.4))">🧠</span>
+      <div><h1>stark<b>agents</b></h1><small>SWARM INTELLIGENCE · STARKNET</small></div>
+    </div>
+    <div class="wbadge">⬡ ${S.wallet}</div>
+  </header>`;
+}
+
+function agentCategoryBlocks(compact){
+  return CATEGORIES.map(cat => {
+    const agents = cat.keys.map(k => ALL_AGENTS[k]);
+    const isDemo = cat.keys.some(k => DEMO_KEYS.includes(k));
+    if(compact && !isDemo) return "";
+    return `<div class="cat-group">
+      <div class="cat-label">${cat.label}</div>
+      <div class="agent-pills">
+        ${agents.map(a=>`<span class="agent-pill" style="background:${a.c}08;border:1px solid ${a.c}12;color:${a.c}">${a.av} ${a.role.split(" ")[0]}</span>`).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- CONNECT ----
+function vConnect(){
+  return `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px" class="fu">
+    <div style="text-align:center;max-width:480px;width:100%">
+      <div style="font-size:56px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(139,92,246,.3))">🧠</div>
+      <h1 style="font-size:30px;font-weight:800;color:#E0D8FF;margin-bottom:6px">stark<span style="color:#A855F7">agents</span></h1>
+      <p style="font-size:13px;color:rgba(168,85,247,.3);max-width:400px;margin:0 auto 24px;line-height:1.6">
+        Will your startup survive the swarm?<br/>
+        <span style="font-size:11px">AI agents debate your idea. Verdict verified on StarkNet.</span>
+      </p>
+      <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+        ${PILLARS.map(p=>`<span style="font-size:9px;padding:4px 10px;border-radius:14px;background:${p.color}06;border:1px solid ${p.color}0A;color:${p.color}88">${p.icon} ${p.label.split("&")[0].trim()}</span>`).join("")}
+      </div>
+      <button id="conBtn" class="bt" style="padding:15px 40px;border-radius:14px;border:1px solid rgba(139,92,246,.28);background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(168,85,247,.08));color:#A855F7;font-size:15px;font-weight:800;width:100%;max-width:300px">
+        Get Started →
+      </button>
+      <div style="margin-top:10px;font-size:9px;color:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;gap:5px">
+        <span style="color:rgba(167,139,250,.4);font-weight:700">Powered by StarkZap</span>
+        <span style="color:rgba(255,255,255,.08)">· No seed phrases · No gas tokens</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---- HOME ----
+function vHome(){
+  return `${hdr()}<div class="mn fu">
+    <div style="text-align:center;padding:36px 20px 24px">
+      <h2 style="font-size:26px;font-weight:800;color:#E0D8FF;margin-bottom:8px">Will your startup <span style="color:#A855F7">survive</span> the swarm?</h2>
+      <p style="font-size:12px;color:rgba(168,85,247,.28);max-width:460px;margin:0 auto 20px;line-height:1.6">
+        12 AI agents with conflicting biases debate your startup's viability.<br/>Score is published permanently to StarkNet.
+      </p>
+      <button class="bt bt-go" onclick="go('input')" style="max-width:320px;margin:0 auto;background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.25);color:#A855F7;display:block">
+        🚀 Drop Your Pitch
+      </button>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      ${PILLARS.map(p=>`<div class="pn" style="text-align:center;padding:14px 8px">
+        <div style="font-size:20px;margin-bottom:4px">${p.icon}</div>
+        <div style="font-size:9px;font-weight:800;color:${p.color};line-height:1.3">${p.label.split("&")[0].trim()}</div>
+      </div>`).join("")}
+    </div>
+
+    <div class="pn" style="margin-bottom:16px">
+      <div style="font-size:10px;font-weight:800;color:rgba(168,85,247,.4);margin-bottom:14px;letter-spacing:.1em">THE SWARM — 12 AGENTS · 8 CATEGORIES</div>
+      ${agentCategoryBlocks(false)}
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      ${[{l:"AI Agents",v:"12",i:"🤖"},{l:"Eval Pillars",v:"4",i:"📊"},{l:"On-Chain",v:"StarkNet",i:"⬡"}].map(s=>
+        `<div class="pn" style="text-align:center;padding:12px"><div style="font-size:14px;margin-bottom:2px">${s.i}</div><div style="font-size:15px;font-weight:800;color:#E0D8FF">${s.v}</div><div style="font-size:8px;color:rgba(168,85,247,.22);margin-top:2px;font-weight:600">${s.l}</div></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+// ---- INPUT ----
+function vInput(){
+  return `${hdr()}<div class="mn fi" style="max-width:620px;margin:0 auto;padding:20px 16px">
+    <button class="bt-bk" onclick="go('home')">← Back</button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:32px;margin-bottom:6px">🚀</div>
+      <h2 style="font-size:19px;font-weight:800;color:#E0D8FF;margin-bottom:3px">Drop Your Pitch</h2>
+      <p style="font-size:10px;color:rgba(168,85,247,.3)">6 agents · 4 pillars · 2-round debate · verdict on StarkNet</p>
+    </div>
+    <div class="pn" style="padding:22px;margin-bottom:14px">
+      ${FIELDS.map(f=>`<div class="fd"><label>${f.label}</label>${f.multi
+        ?`<textarea id="f-${f.key}" rows="2" placeholder="${f.ph}">${esc(S.inp[f.key]||"")}</textarea>`
+        :`<input id="f-${f.key}" value="${esc(S.inp[f.key]||"")}" placeholder="${f.ph}"/>`
+      }</div>`).join("")}
+
+      <div class="toggle-row" id="toggleRow" style="margin-bottom:14px" onclick="togglePublic()">
+        <div class="toggle ${S.isPublic?'on':''}" id="pubToggle"></div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#E0D8FF">${S.isPublic?"Public verdict":"Private verdict"}</div>
+          <div style="font-size:9px;color:rgba(200,230,240,.3)">${S.isPublic?"VCs & accelerators can verify your score":"Only you can see this verdict on-chain"}</div>
+        </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(168,85,247,.3)">⬡ On-chain</div>
+      </div>
+
+      <button class="bt bt-go" id="goBtn" style="background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.28);color:#A855F7">
+        🧠 Run Simulation
+      </button>
+    </div>
+
+    <div class="pn" style="padding:16px">
+      <div style="font-size:9px;color:rgba(168,85,247,.28);font-weight:800;margin-bottom:12px;letter-spacing:.1em">YOUR EVALUATION SWARM (6 ACTIVE)</div>
+      ${agentCategoryBlocks(true)}
+    </div>
+  </div>`;
+}
+
+// ---- SIMULATING (Bubble War Room) ----
+function vSim(){
+  const title = S.inp.name || "Your Startup";
+  const total = DEMO_AGENTS.length * PILLARS.length * 2; // ×2 for 2 rounds
+  const prog = Math.round(S.prog);
+
+  return `${hdr()}<div class="mn fi">
+    <div class="pn" style="padding:12px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <span style="font-size:13px;font-weight:800;color:#E0D8FF">⚡ WAR ROOM — <span style="color:#A855F7">${esc(title)}</span></span>
+          ${S.currentRound>0?`<span style="font-size:9px;font-weight:700;margin-left:8px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,.06);color:#A855F7">ROUND ${S.currentRound}</span>`:""}
+        </div>
+        <div style="font-size:15px;font-weight:800;color:#A855F7">${prog}%</div>
+      </div>
+      <div class="warroom-status" id="wrStatus">
+        <span class="status-chip" style="background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.1);color:rgba(168,85,247,.5)">
+          <span id="s-loader" style="display:inline-block;width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(139,92,246,.3);border-top-color:#A855F7;animation:spin .7s linear infinite"></span>
+          <span id="s-text">Analyzing pitch...</span>
+        </span>
+      </div>
+      <div style="display:flex;gap:3px;margin-bottom:4px">
+        ${PILLARS.map(p=>`<div class="pg" style="flex:1"><div class="pf" id="pg-${p.key}" style="width:0%;background:${p.color};opacity:.6"></div></div>`).join("")}
+      </div>
+      <div style="display:flex;gap:3px">
+        ${PILLARS.map(p=>`<div style="flex:1;text-align:center;font-size:7.5px;color:${p.color}55;font-weight:700">${p.icon}</div>`).join("")}
+      </div>
+    </div>
+
+    <div class="warroom-inner" style="display:flex;gap:12px">
+      <!-- Bubble Arena -->
+      <div style="flex:1.3">
+        <div class="bubble-arena" id="bubbleArena">
+          ${DEMO_AGENTS.map((a,i)=>{
+            const pos = BUBBLE_POS[i];
+            const jx = pos.x + (Math.random()*6-3);
+            const jy = pos.y + (Math.random()*6-3);
+            return `<div class="agent-bubble" id="bubble-${a.id}"
+              style="left:${jx}%;top:${jy}%;width:34px;height:34px;animation:float${i} ${3.5+i*.4}s ${i*.3}s ease-in-out infinite"
+              data-base-x="${jx}" data-base-y="${jy}"
+              title="">
+              <span class="bubble-av" id="bav-${a.id}" style="font-size:13px">${a.av}</span>
+              <span class="bubble-conf" id="bconf-${a.id}" style="color:rgba(255,255,255,.2)"></span>
+              <div class="bubble-tooltip" id="btt-${a.id}"><b>${a.name}</b><span id="bttr-${a.id}">Waiting...</span></div>
+            </div>`;
+          }).join("")}
+        </div>
+        <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
+          ${DEMO_AGENTS.map(a=>`<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:${a.c}08;border:1px solid ${a.c}10;color:${a.c}88;font-weight:600">${a.av} ${a.handle}</span>`).join("")}
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div style="width:220px;flex-shrink:0">
+        <div style="font-size:8px;font-weight:800;color:rgba(168,85,247,.25);letter-spacing:.12em;margin-bottom:6px">LIVE FEED</div>
+        <div class="log-panel" id="logPanel"></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---- PROVING ----
+function vProving(){
+  return `${hdr()}<div class="mn fi" style="text-align:center;padding-top:50px">
+    <div style="font-size:42px;margin-bottom:14px">🔐</div>
+    <h2 style="font-size:17px;font-weight:800;color:#A78BFA;margin-bottom:6px">Publishing to StarkNet</h2>
+    <p style="font-size:11px;color:rgba(167,139,250,.38);max-width:350px;margin:0 auto 24px">Writing verdict on-chain. Verifiable by anyone, forever.</p>
+    <div style="max-width:360px;margin:0 auto">
+      <div style="height:4px;border-radius:2px;background:rgba(167,139,250,.07);overflow:hidden;margin-bottom:10px">
+        <div id="pvB" style="width:0%;height:100%;border-radius:2px;background:linear-gradient(90deg,#8B5CF6,#C026D3);transition:width .15s"></div>
+      </div>
+      <div id="pvT" style="font-size:10px;color:rgba(167,139,250,.35)">Preparing transaction...</div>
+    </div>
+  </div>`;
+}
+
+// ---- VERDICT ----
+function vVerdict(){
+  const v = S.verdict; if(!v) return "";
+  const c = S.blocked?"#C084FC":v.fs>=65?"#A855F7":v.fs>=45?"#FBBF24":"#FF6B8A";
+  const title = S.inp.name || "Your Startup";
+  const godLeft = 3 - S.godCount;
+
+  return `${hdr()}<div class="mn fi">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <button class="bt-bk" onclick="go('home')" style="margin:0">← Home</button>
+      <button class="bt" onclick="generatePDF()" style="padding:8px 16px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2);color:#A855F7;font-size:11px;display:flex;align-items:center;gap:6px">
+        <span>📄</span> Download Pitch Report
+      </button>
+    </div>
+
+    ${S.contested?`<div class="contested-banner" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);color:#FBBF24">⚡ CONTESTED VERDICT — Swarm was divided</div>`:""}
+    ${S.blocked?`<div class="contested-banner" style="background:rgba(192,132,252,.05);border:1px solid rgba(192,132,252,.2);color:#C084FC">🚫 BLOCKED — Regulatory risk flagged by Policy Scan</div>`:""}
+
+    <div class="pn vb" style="margin-bottom:16px;border-color:${c}12">
+      <div style="font-size:9px;color:rgba(168,85,247,.28);letter-spacing:.18em;margin-bottom:4px;font-weight:700">SWARM VERDICT</div>
+      <div style="font-size:15px;font-weight:800;color:rgba(224,244,255,.8);margin-bottom:8px">${esc(title)}</div>
+      <div style="font-size:50px;font-weight:800;color:${c}">${v.fs}<span style="font-size:18px;opacity:.35">/100</span></div>
+      <div style="font-size:14px;font-weight:800;color:${c};margin-top:3px">${v.vd}</div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+        <span style="font-size:9px;color:rgba(200,230,240,.3)">🔄 ${S.flips} stance flip${S.flips!==1?"s":""}</span>
+        ${S.consensus!==null?`<span style="font-size:9px;color:rgba(200,230,240,.3)">🤝 ${S.consensus}% consensus</span>`:""}
+        <span style="font-size:9px;color:rgba(200,230,240,.3)">🤖 ${DEMO_AGENTS.length} agents · ${PILLARS.length} pillars</span>
+      </div>
+      ${S.tx?`<a href="https://sepolia.starkscan.co/tx/${S.tx}" target="_blank" style="text-decoration:none;margin-top:12px;display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:18px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.12)">
+        <span style="font-size:9px;color:#A78BFA;font-weight:700">⬡ Verified on StarkNet</span>
+        <span style="font-size:8px;color:rgba(167,139,250,.4);font-family:'JetBrains Mono',monospace">${S.tx.slice(0,10)}...${S.tx.slice(-6)}</span>
+      </a>`:`<div style="margin-top:10px;font-size:9px;color:rgba(167,139,250,.25)">⏳ Publishing to StarkNet...</div>`}
+    </div>
+
+    <div class="g2" style="margin-bottom:16px">
+      ${PILLARS.map(p=>{const sc=S.pS[p.key]||0;return`<div class="pn" style="padding:13px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:10px;font-weight:700;color:${p.color}">${p.icon} ${p.label.split("&")[0].trim()}</span>
+          <span style="font-size:18px;font-weight:800;color:${p.color}">${sc}</span>
+        </div>
+        <div class="pg" style="height:3px"><div class="pf" style="width:${sc}%;background:${p.color};opacity:.5"></div></div>
+      </div>`;}).join("")}
+    </div>
+
+    <!-- God View -->
+    <div class="pn" style="border-color:rgba(167,139,250,.08);margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:16px">👁️</span>
+          <h3 style="font-size:13px;font-weight:800;color:#A78BFA;margin:0">God View</h3>
+        </div>
+        <span style="font-size:9px;color:${godLeft>0?"rgba(167,139,250,.4)":"rgba(255,107,138,.5)"};font-weight:700">${godLeft} re-sim${godLeft!==1?"s":""} left</span>
+      </div>
+      <p style="font-size:10px;color:rgba(167,139,250,.3);margin-bottom:10px">Alter reality — the swarm re-evaluates under changed conditions.</p>
+
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+        ${["Amazon enters your market","OpenAI builds this natively","You pivot to B2B","Regulation bans core feature","Competitor raises $50M"].map(s=>
+          `<button onclick="setScenario('${s.replace(/'/g,"\\'")}',this)" class="bt" style="font-size:8px;padding:4px 8px;background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.1);color:rgba(167,139,250,.5)">${s}</button>`
+        ).join("")}
+      </div>
+
+      <div style="display:flex;gap:7px">
+        <input class="gvi" id="gvIn" ${godLeft===0?"disabled":""} placeholder="${godLeft===0?"God View limit reached (3/3)":"Type a what-if scenario or pick one above..."}"/>
+        <button class="bt" id="gvBtn" ${godLeft===0?"disabled":""} style="padding:10px 14px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:#A78BFA;font-size:10px;white-space:nowrap;${godLeft===0?"opacity:.3":""}">
+          🌀 Re-simulate
+        </button>
+      </div>
+
+      ${S.godH.length?`<div style="margin-top:10px;border-top:1px solid rgba(167,139,250,.06);padding-top:8px">
+        ${S.godH.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:6px;background:rgba(167,139,250,.02);margin-bottom:3px">
+          <span style="font-size:9px;color:rgba(200,230,240,.3);flex:1">🌀 ${esc(h.sc)}</span>
+          <span style="font-size:11px;font-weight:800;color:${h.c};margin-left:8px">${h.s}/100</span>
+          <span style="font-size:8px;color:rgba(200,230,240,.2);margin-left:6px">${h.delta>0?"+":""} ${h.delta} pts</span>
+        </div>`).join("")}
+      </div>`:""}
+    </div>
+
+    <!-- Transcript -->
+    <div class="pn">
+      <div style="font-size:11px;font-weight:800;color:#A855F7;margin-bottom:10px">🧠 War Room Transcript</div>
+      <div class="ms" style="max-height:260px">
+        ${S.log.map(renderLogItem).join("")}
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:16px 0 8px;font-size:9px;color:rgba(255,255,255,.1);font-weight:600">
+      Powered by <span style="color:rgba(167,139,250,.4)">StarkNet</span> · <span style="color:rgba(167,139,250,.3)">StarkZap</span>
+    </div>
+  </div>`;
+}
+
+function renderLogItem(msg){
+  if(msg.type==="pillar_start") return `<div class="log-pillar" style="color:${msg.color};border-color:${msg.color}30;background:${msg.color}04;font-size:8px;margin-top:4px">${msg.icon||""} ${(msg.label||"").toUpperCase()} ${msg.round?`· ROUND ${msg.round}`:""}</div>`;
+  if(msg.type==="round_complete") return `<div class="log-round">── ROUND ${msg.round} COMPLETE ──</div>`;
+  if(msg.type==="graph_built") return `<div class="log-graph">📊 Graph: ${msg.domain||""} · ${msg.market_stage||""} · ${msg.business_model||""}</div>`;
+  if(msg.type==="agent_result") return `<div class="log-vote log-item" style="border-color:${msg.agent_color||"rgba(255,255,255,.04)"}0C">
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+      <span style="font-size:12px">${msg.agent_avatar||"🤖"}</span>
+      <span style="font-size:9px;font-weight:700;color:${msg.agent_color||"#E0D8FF"}">${msg.agent_name||""}</span>
+      ${msg.flipped?`<span style="font-size:8px;color:#FBBF24;font-weight:700">↩ FLIPPED</span>`:""}
+      <span style="margin-left:auto;font-size:8px;padding:1px 6px;border-radius:10px;font-weight:700;${msg.stance==="bullish"?"background:rgba(139,92,246,.06);color:#A855F7":"background:rgba(255,107,138,.06);color:#FF6B8A"}">${msg.stance==="bullish"?"▲":"▼"} ${msg.confidence}%</span>
+    </div>
+    <div style="font-size:9.5px;color:rgba(200,230,240,.45);line-height:1.45">${esc(msg.reasoning||"")}</div>
+  </div>`;
+  return "";
+}
+
+// ============================================================
+// STARKZAP CONNECT
+// ============================================================
+function showStarkZapModal(){
+  $("modal-root").innerHTML = `<div class="modal-bg">
+    <div class="modal">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:28px;margin-bottom:8px">⬡</div>
+        <div style="font-size:15px;font-weight:800;color:#E0D8FF">Sign in to StarkAgents</div>
+        <div style="font-size:10px;color:rgba(167,139,250,.4);margin-top:3px">Powered by StarkZap · No seed phrases</div>
+      </div>
+      <button class="social-btn" onclick="doStarkZapLogin('google')">
+        <span style="font-size:16px">G</span>
+        <span>Continue with Google</span>
+      </button>
+      <button class="social-btn" onclick="doStarkZapLogin('email')">
+        <span style="font-size:16px">✉</span>
+        <span>Continue with Email</span>
+      </button>
+      <div style="text-align:center;margin-top:14px;font-size:8.5px;color:rgba(255,255,255,.12);line-height:1.6">
+        An embedded StarkNet wallet is created automatically.<br/>No extensions · No gas tokens · No seed phrases.
+      </div>
+      <button onclick="closeModal()" style="margin-top:12px;background:none;border:none;color:rgba(255,255,255,.2);font-size:10px;cursor:pointer;width:100%;font-family:inherit">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function closeModal(){ $("modal-root").innerHTML = ""; }
+
+function doStarkZapLogin(method){
+  closeModal();
+  // StarkZap SDK: sdk.onboard({ strategy: OnboardStrategy.Privy })
+  // Simulated for single-file demo — replace with real StarkZap SDK in production
+  const h = "0123456789abcdef";
+  const addr = "0x0"+Array.from({length:8},()=>h[~~(Math.random()*16)]).join("");
+  S.wallet = addr.slice(0,6)+"..."+addr.slice(-4);
+  go("home");
+  notify(`Wallet created via StarkZap · ${method === "google" ? "Google" : "Email"}`);
+}
+
+function togglePublic(){
+  S.isPublic = !S.isPublic;
+  render();
+}
+
+// ============================================================
+// SIMULATION ENGINE
+// ============================================================
+function initBubbleState(){
+  S.bubbles = {};
+  DEMO_AGENTS.forEach((a, i) => {
+    const pos = BUBBLE_POS[i];
+    S.bubbles[a.id] = {
+      agent: a,
+      idx: i,
+      baseX: pos.x + (Math.random()*4-2),
+      baseY: pos.y + (Math.random()*4-2),
+      stance: null,
+      confidence: 0,
+    };
+  });
+}
+
+function initBubbleDom(){
+  // Bubbles are pre-rendered in vSim, just ensure positions are set
+  Object.values(S.bubbles).forEach(b => {
+    const el = $("bubble-"+b.agent.id);
+    if(el){
+      el.style.left = b.baseX + "%";
+      el.style.top  = b.baseY + "%";
+    }
+  });
+}
+
+function updateBubbleDom(msg){
+  const b = S.bubbles[msg.agent_id];
+  if(!b) return;
+
+  const el     = $("bubble-"+msg.agent_id);
+  const conf_el= $("bconf-"+msg.agent_id);
+  const tt_el  = $("bttr-"+msg.agent_id);
+  if(!el) return;
+
+  const isFlip = (b.stance && b.stance !== msg.stance);
+  b.stance     = msg.stance;
+  b.confidence = msg.confidence;
+
+  const color  = msg.stance === "bullish" ? "#00FFD4" : "#FF6B8A";
+  const size   = 36 + (msg.confidence - 40) * 0.75; // 36–75px
+
+  el.style.width       = size+"px";
+  el.style.height      = size+"px";
+  el.style.marginLeft  = -(size/2)+"px";
+  el.style.marginTop   = -(size/2)+"px";
+  el.style.background  = `radial-gradient(circle at 35% 35%, ${color}55, ${color}15)`;
+  el.style.borderColor = color+"55";
+  el.style.opacity     = "1";
+  el.classList.add("active");
+
+  if(conf_el){ conf_el.textContent = msg.confidence+"%"; conf_el.style.color = color; }
+  if(tt_el)  { tt_el.textContent = msg.reasoning || ""; }
+
+  if(isFlip){
+    el.classList.remove("flipping");
+    void el.offsetWidth; // reflow
+    el.classList.add("flipping");
+    setTimeout(()=>el.classList.remove("flipping"), 450);
+  }
+
+  // Faction drift
+  applyFactionDrift(msg.agent_id, msg.stance);
+}
+
+function applyFactionDrift(agentId, stance){
+  const b = S.bubbles[agentId];
+  if(!b) return;
+
+  const agreeing = Object.values(S.bubbles).filter(x =>
+    x.agent.id !== agentId && x.stance === stance
+  );
+
+  let newX = b.baseX, newY = b.baseY;
+  if(agreeing.length > 0){
+    const avgX = agreeing.reduce((s,x)=>s+x.baseX,0)/agreeing.length;
+    const avgY = agreeing.reduce((s,x)=>s+x.baseY,0)/agreeing.length;
+    newX = b.baseX + (avgX - b.baseX) * 0.14;
+    newY = b.baseY + (avgY - b.baseY) * 0.14;
+  }
+
+  const el = $("bubble-"+agentId);
+  if(el){
+    el.style.left = newX + "%";
+    el.style.top  = newY + "%";
+  }
+}
+
+function appendLog(item){
+  S.log.push(item);
+  const panel = $("logPanel");
+  if(!panel) return;
+  const el = document.createElement("div");
+  el.innerHTML = renderLogItem(item);
+  panel.appendChild(el.firstChild||el);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function setStatus(text){
+  const el = $("s-text");
+  if(el) el.textContent = text;
+}
+
+function updateProgress(done, total){
+  S.prog = (done/total)*100;
+  S.nA   = done;
+  const el = $(`pg-${S.currentPillar}`);
+  // Update pillar progress bars proportionally
+  PILLARS.forEach((p, i) => {
+    const bar = $("pg-"+p.key);
+    if(!bar) return;
+    const pillarsPerRound = PILLARS.length;
+    const agentsPerPillar = DEMO_AGENTS.length;
+    // R1 progress per pillar
+    const pillarDone = Math.min(Math.max(done - i*agentsPerPillar, 0), agentsPerPillar);
+    bar.style.width = (pillarDone/agentsPerPillar)*100+"%";
+  });
+}
+
+function startSim(){
+  FIELDS.forEach(f => { const e=$("f-"+f.key); if(e) S.inp[f.key]=e.value; });
+  if(!(S.inp.name||"").trim())  { notify("Please enter a startup name","err"); return; }
+  if(!(S.inp.problem||"").trim()){ notify("Please describe the problem","err"); return; }
+
+  S.log=[]; S.pS={}; S.verdict=null; S.nA=0; S.prog=0; S.tx=null;
+  S.flips=0; S.consensus=null; S.contested=false; S.blocked=false;
+  S.currentRound=0; S.currentPillar=null;
+  initBubbleState();
+  go("sim");
+  notify("Swarm deployed!");
+
+  try{
+    const ws = new WebSocket(WS_URL+"/ws/simulate");
+    let connected = false;
+
+    ws.onopen = () => {
+      connected = true;
+      ws.send(JSON.stringify({
+        ...S.inp,
+        scenario: S.scenario,
+        is_public: S.isPublic,
+      }));
+    };
+
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      handleWsEvent(msg, ws);
+    };
+
+    ws.onerror = () => {
+      if(!connected){ notify("Backend offline — using simulation","err"); offlineSim(); }
+    };
+
+    setTimeout(()=>{ if(!connected){ try{ws.close()}catch(x){} offlineSim(); } }, 3000);
+
+  }catch(x){ offlineSim(); }
+}
+
+function handleWsEvent(msg, ws){
+  switch(msg.type){
+
+    case "graph_built":
+      S.graph = msg.data;
+      setStatus(`Graph: ${msg.data.domain} · ${msg.data.market_stage}`);
+      appendLog({...msg.data, type:"graph_built"});
+      break;
+
+    case "config_ready":
+      setStatus(`${msg.active_agents.length} agents activated`);
+      break;
+
+    case "god_view_active":
+      setStatus(`🌀 God View: ${msg.scenario}`);
+      break;
+
+    case "pillar_start":
+      S.currentPillar = msg.pillar;
+      if(msg.round) S.currentRound = msg.round;
+      setStatus(`Round ${msg.round||1} · ${msg.label}`);
+      appendLog(msg);
+      break;
+
+    case "round_complete":
+      appendLog(msg);
+      if(msg.round===1) setStatus("Round 2 — Agents deliberate...");
+      break;
+
+    case "agent_result":
+      S.nA++;
+      S.prog = Math.min((S.nA / (DEMO_AGENTS.length * PILLARS.length * 2)) * 100, 99);
+      updateBubbleDom(msg);
+      appendLog(msg);
+      // Update progress bar
+      const bar = $("pg-"+msg.pillar);
+      if(bar){ const cur = parseFloat(bar.style.width||"0"); bar.style.width = Math.min(cur+20, 100)+"%"; }
+      break;
+
+    case "stance_flip":
+      S.flips++;
+      break;
+
+    case "verdict":
+      S.verdict   = { fs: msg.final_score, vd: msg.verdict };
+      S.pS        = msg.pillar_scores || {};
+      S.flips     = msg.stance_flips   || 0;
+      S.consensus = msg.consensus_level ?? null;
+      S.contested = msg.contested       || false;
+      S.blocked   = msg.blocked         || false;
+      if(ws) ws.close();
+      runProving();
+      break;
+
+    case "error":
+      notify(msg.message || "Agent error", "err");
+      break;
+  }
+}
+
+// ============================================================
+// OFFLINE SIMULATION
+// ============================================================
+function offlineSim(scenario){
+  const topic = S.inp.name || "this startup";
+  const sn    = scenario ? ` [Scenario: "${scenario}"]` : "";
+
+  // Fake graph
+  const fakeGraph = { domain:"b2b_saas", market_stage:"growing", business_model:"subscription", type:"graph_built" };
+  appendLog(fakeGraph);
+  setStatus("Graph built · 6 agents activated");
+
+  let done = 0;
+  const total = DEMO_AGENTS.length * PILLARS.length;
+  const totalR = total * 2;
+
+  // Run Round 1, then Round 2
+  [1,2].forEach((round, ri) => {
+    PILLARS.forEach((pillar, pi) => {
+      const delay_base = ri * (total * 650) + pi * (DEMO_AGENTS.length * 650);
+      setTimeout(() => {
+        S.currentRound = round;
+        appendLog({type:"pillar_start", pillar:pillar.key, label:pillar.label, icon:pillar.icon, color:pillar.color, round});
+      }, delay_base);
+
+      DEMO_AGENTS.forEach((agent, ai) => {
+        const delay = delay_base + ai * 600 + Math.random()*200;
+        setTimeout(() => {
+          const bull   = Math.random() > 0.42;
+          const conf   = 42 + ~~(Math.random()*42);
+          const result = {
+            type:"agent_result",
+            agent_id: agent.id,
+            agent_name: agent.name,
+            agent_handle: agent.handle,
+            agent_role: agent.role,
+            agent_category: agent.cat,
+            agent_avatar: agent.av,
+            agent_color: agent.c,
+            pillar: pillar.key,
+            round,
+            stance: bull?"bullish":"bearish",
+            confidence: conf,
+            reasoning: genR(pillar.key, agent.role, topic, bull, sn),
+            flipped: round===2 && Math.random()<0.25,
+          };
+
+          if(result.flipped) S.flips++;
+          updateBubbleDom(result);
+          appendLog(result);
+
+          // Accumulate for scoring
+          if(!S._offVotes) S._offVotes = {};
+          if(!S._offVotes[pillar.key]) S._offVotes[pillar.key] = {r1:[],r2:[]};
+          S._offVotes[pillar.key][`r${round}`].push(result);
+
+          done++;
+          S.prog = (done/totalR)*100;
+
+          // Update pillar bar
+          const bar = $("pg-"+pillar.key);
+          if(bar){ const c=parseFloat(bar.style.width||"0"); bar.style.width=Math.min(c+18,100)+"%"; }
+
+        }, delay);
+      });
+    });
+  });
+
+  // After all rounds done
+  setTimeout(() => {
+    if(S._offVotes){
+      PILLARS.forEach(p => {
+        const votes = S._offVotes[p.key];
+        const r2 = (votes?.r2||[]).length ? votes.r2 : (votes?.r1||[]);
+        const bullW = r2.filter(v=>v.stance==="bullish").reduce((s,v)=>s+v.confidence,0);
+        const bearW = r2.filter(v=>v.stance==="bearish").reduce((s,v)=>s+v.confidence,0);
+        S.pS[p.key] = bullW+bearW>0 ? Math.round((bullW/(bullW+bearW))*100) : 50;
+      });
+    }
+    const ss = Object.values(S.pS);
+    const fs = ss.length ? Math.round(ss.reduce((a,b)=>a+b,0)/ss.length) : 50;
+    S.verdict   = { fs, vd: fs>=65?"LIKELY SUCCESS":fs>=45?"UNCERTAIN — PIVOT ADVISED":"HIGH RISK — RETHINK" };
+    S.consensus = 100 - Math.round((S.flips / (DEMO_AGENTS.length*PILLARS.length))*100);
+    S.contested = Math.random() < 0.2;
+    S._offVotes = null;
+    runProving();
+  }, totalR * 650 + 1000);
+}
+
+function genR(pillar, role, topic, bull, sn){
+  const R = {
+    market:{
+      b:[`${sn}Market signals for ${topic} show consistent upward trajectory. Demand is real and timing aligns with current adoption curves.`,
+         `${sn}Behavioral patterns in the target market indicate rising urgency. The psychological tipping point is near for solutions like ${topic}.`,
+         `${sn}Macro trends are favorable. The regulatory environment and consumer behavior both support ${topic}'s entry timing.`],
+      r:[`${sn}I've evaluated hundreds of similar pitches. The market for ${topic} exists but willingness to pay remains unproven at scale.`,
+         `${sn}Market timing is tricky for ${topic}. Similar solutions launched too early and failed. Is it different now?`,
+         `${sn}Demand signals are ambiguous. Interest doesn't equal intent to purchase.`],
+    },
+    revenue:{
+      b:[`${sn}The unit economics for ${topic} look favorable at scale. Infrastructure costs scale sub-linearly — margins improve past 10K users.`,
+         `${sn}The business model aligns with how this market segment prefers to buy. Low friction to first payment.`,
+         `${sn}Revenue diversification potential is strong. Multiple monetization paths give ${topic} redundancy.`],
+      r:[`${sn}Customer acquisition costs in this market typically run 3-5x what founders estimate for ${topic}.`,
+         `${sn}Pricing power is weak in this segment. Competitors will undercut and ${topic} doesn't have enough differentiation.`,
+         `${sn}The path to profitability depends on retention metrics only the top 10% of startups achieve.`],
+    },
+    adoption:{
+      b:[`${sn}Value proposition of ${topic} is clear within seconds. Viral coefficient potential above 1.0.`,
+         `${sn}The habit loop is well-designed. Variable reward plus social proof plus low friction equals strong retention.`,
+         `${sn}Distribution channels are wide open. Content-led acquisition in this market has low CAC and high intent.`],
+      r:[`${sn}Onboarding has critical friction points. Users drop off before experiencing the value of ${topic}.`,
+         `${sn}D30 retention modeling is concerning. The novelty wears off fast and the core loop isn't sticky enough.`,
+         `${sn}Switching costs are too low. Users of ${topic} can leave as easily as they arrived.`],
+    },
+    competition:{
+      b:[`${sn}The competitive landscape is fragmented — no dominant player owns more than 15% share. Room for ${topic}.`,
+         `${sn}Technical complexity creates a stealth moat. Data network effects compound after month 6 — hard to replicate.`,
+         `${sn}First-mover advantage in this specific niche is real. Incumbents are too slow and too broad to compete effectively.`],
+      r:[`${sn}Running adversarial simulation: I can replicate ${topic}'s core value in 4-6 weeks with existing infrastructure. Moat is thin.`,
+         `${sn}Incumbents will notice ${topic} at ~5K users and can ship a feature clone in one sprint.`,
+         `${sn}Three competitors are already funded. ${topic} is entering a race that's already started.`],
+    },
+  };
+  const pool = R[pillar]?.[bull?"b":"r"] || [`Analysis suggests ${bull?"favorable":"unfavorable"} conditions for ${topic}.`];
+  return pool[~~(Math.random()*pool.length)];
+}
+
+// ============================================================
+// PROVING / ON-CHAIN
+// ============================================================
+function runProving(){
+  go("proving");
+  let p = 0;
+  const iv = setInterval(()=>{
+    p += Math.random()*9+3;
+    if(p >= 100){
+      p = 100; clearInterval(iv);
+      // Real StarkZap wallet.execute() would go here:
+      // const tx = await wallet.execute({ contractAddress, entrypoint:"submit_verdict", calldata:[...] });
+      const h = "0123456789abcdef";
+      S.tx = "0x0"+Array.from({length:16},()=>h[~~(Math.random()*16)]).join("");
+      setTimeout(()=>{ S.scenario=null; go("verdict"); }, 600);
+    }
+    const b=$("pvB"), t=$("pvT");
+    if(b) b.style.width=p+"%";
+    if(t) t.textContent=p<25?"Preparing transaction...":p<50?"Hashing simulation data...":p<75?"Submitting to StarkNet...":p<95?"Confirming block...":"✓ Verified on-chain!";
+  }, 110);
+}
+
+// ============================================================
+// GOD VIEW
+// ============================================================
+function setScenario(sc, btn){
+  const el = $("gvIn");
+  if(el) el.value = sc;
+  document.querySelectorAll(".bt[onclick^='setScenario']").forEach(b=>b.style.borderColor="");
+  if(btn) btn.style.borderColor="rgba(167,139,250,.4)";
+}
+
+function runGodView(){
+  if(S.godCount >= 3){ notify("God View limit reached (3/3)","err"); return; }
+  const el = $("gvIn");
+  if(!el || !el.value.trim()) return;
+  const sc = el.value.trim();
+  const prevScore = S.verdict?.fs || 0;
+  const prevColor = prevScore>=65?"#A855F7":prevScore>=45?"#FBBF24":"#FF6B8A";
+
+  S.godH.push({ sc, s:prevScore, c:prevColor, delta:0 });
+  S.godCount++;
+  S.scenario = sc;
+  S.log=[]; S.pS={}; S.verdict=null; S.nA=0; S.prog=0; S.flips=0;
+  initBubbleState();
+  go("sim");
+  notify(`God View ${S.godCount}/3: "${sc.slice(0,30)}..."`);
+
+  // Try real backend first, fall back to offline
+  try{
+    const ws = new WebSocket(WS_URL+"/ws/simulate");
+    let connected = false;
+    ws.onopen = () => {
+      connected = true;
+      ws.send(JSON.stringify({ ...S.inp, scenario: sc, is_public: S.isPublic }));
+    };
+    ws.onmessage = e => handleWsEvent(JSON.parse(e.data), ws);
+    ws.onerror = () => { if(!connected) offlineSim(sc); };
+    setTimeout(()=>{ if(!connected){ try{ws.close()}catch(x){} offlineSim(sc); }},3000);
+  }catch(x){ offlineSim(sc); }
+}
+
+// Update God View delta after re-sim
+function updateGodDelta(newScore){
+  if(S.godH.length){
+    const last = S.godH[S.godH.length-1];
+    last.delta = newScore - last.s;
+    last.s = newScore;
+    last.c = newScore>=65?"#A855F7":newScore>=45?"#FBBF24":"#FF6B8A";
+  }
+}
+
+// ============================================================
+// BIND
+// ============================================================
+function bind(){
+  const cb = $("conBtn");  if(cb)  cb.onclick  = showStarkZapModal;
+  const gb = $("goBtn");   if(gb)  gb.onclick  = startSim;
+  const gvb= $("gvBtn");  if(gvb) gvb.onclick = runGodView;
+  const gvi= $("gvIn");   if(gvi) gvi.onkeydown = e=>{ if(e.key==="Enter") runGodView(); };
+  FIELDS.forEach(f=>{ const e=$("f-"+f.key); if(e) e.oninput=()=>S.inp[f.key]=e.value; });
+}
+
+render();
+
+// ============================================================
+// PDF REPORT GENERATOR
+// ============================================================
+function generatePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+  const W = 210, M = 18, CW = W - M*2;
+  let y = 20;
+
+  const CYAN   = [0, 220, 180];
+  const PURPLE = [167, 139, 250];
+  const RED    = [255, 107, 138];
+  const YELLOW = [251, 191, 36];
+  const BG     = [8, 20, 40];
+  const TEXT   = [200, 230, 240];
+  const MUTED  = [80, 110, 140];
+
+  function pageCheck(need){
+    if(y + need > 275){ doc.addPage(); y = 20; }
+  }
+
+  function hline(color){
+    doc.setDrawColor(...(color||MUTED));
+    doc.setLineWidth(0.2);
+    doc.line(M, y, W-M, y);
+    y += 4;
+  }
+
+  function label(txt, color){
+    doc.setFontSize(7);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(...(color||MUTED));
+    doc.text(txt.toUpperCase(), M, y);
+    y += 4;
+  }
+
+  function body(txt, color, size, indent){
+    const fs = size || 9;
+    doc.setFontSize(fs);
+    doc.setFont("helvetica","normal");
+    doc.setTextColor(...(color||TEXT));
+    const lines = doc.splitTextToSize(txt, CW - (indent||0));
+    doc.text(lines, M + (indent||0), y);
+    y += lines.length * (fs * 0.45) + 2;
+  }
+
+  function bold(txt, color, size){
+    doc.setFontSize(size||9);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(...(color||TEXT));
+    doc.text(txt, M, y);
+    y += (size||9) * 0.45 + 2;
+  }
+
+  function scoreBar(label_txt, score, color){
+    pageCheck(9);
+    doc.setFontSize(8);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(...TEXT);
+    doc.text(label_txt, M, y);
+    doc.setFontSize(8);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(...color);
+    doc.text(score+"/100", W-M, y, {align:"right"});
+    y += 4;
+    // bar background
+    doc.setFillColor(20, 40, 70);
+    doc.roundedRect(M, y, CW, 3, 1, 1, "F");
+    // bar fill
+    doc.setFillColor(...color);
+    doc.roundedRect(M, y, (score/100)*CW, 3, 1, 1, "F");
+    y += 7;
+  }
+
+  // ── HEADER ──────────────────────────────────────────────
+  doc.setFillColor(...BG);
+  doc.rect(0, 0, W, 38, "F");
+
+  doc.setFontSize(22);
+  doc.setFont("helvetica","bold");
+  doc.setTextColor(...CYAN);
+  doc.text("STARK", M, y+6);
+  doc.setTextColor(255,255,255);
+  doc.text("AGENTS", M+26, y+6);
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica","normal");
+  doc.setTextColor(...MUTED);
+  doc.text("SWARM INTELLIGENCE · STARKNET", M, y+12);
+
+  const now = new Date().toLocaleString();
+  doc.setFontSize(7);
+  doc.setTextColor(...MUTED);
+  doc.text("Pitch Report · "+now, W-M, y+6, {align:"right"});
+  doc.text(S.isPublic ? "PUBLIC VERDICT" : "PRIVATE VERDICT", W-M, y+12, {align:"right"});
+  y = 46;
+
+  // ── STARTUP INFO ─────────────────────────────────────────
+  label("Startup");
+  bold(S.inp.name || "Unnamed Startup", CYAN, 14);
+  y += 2;
+
+  const fields = [
+    ["Problem",  S.inp.problem],
+    ["Solution", S.inp.solution],
+    ["Market",   S.inp.market],
+    ["Model",    S.inp.model],
+  ];
+  fields.forEach(([k,v]) => {
+    if(!v) return;
+    pageCheck(14);
+    label(k, MUTED);
+    body(v, TEXT, 9);
+    y += 1;
+  });
+
+  hline(); y += 2;
+
+  // ── KNOWLEDGE GRAPH ──────────────────────────────────────
+  if(S.graph){
+    label("Knowledge Graph");
+    const g = S.graph;
+    const chips = [
+      g.domain, g.market_stage, g.business_model,
+      g.buyer_persona, g.geography
+    ].filter(Boolean);
+    body(chips.join("  ·  "), CYAN, 8);
+    if(g.key_strengths?.length){ label("Strengths",MUTED); body("+ "+g.key_strengths.join("  ·  "), [100,220,150], 8); }
+    if(g.key_risks?.length)    { label("Risks",MUTED);     body("! "+g.key_risks.join("  ·  "),     RED, 8); }
+    if(g.enemy_archetype)      { label("Biggest Threat",MUTED); body(g.enemy_archetype, [255,160,100], 8); }
+    hline(); y += 2;
+  }
+
+  // ── VERDICT ──────────────────────────────────────────────
+  const v = S.verdict;
+  const vColor = S.blocked ? PURPLE : v.fs>=65 ? CYAN : v.fs>=45 ? YELLOW : RED;
+
+  label("Swarm Verdict");
+  doc.setFontSize(36);
+  doc.setFont("helvetica","bold");
+  doc.setTextColor(...vColor);
+  doc.text(v.fs.toString(), M, y+10);
+  doc.setFontSize(10);
+  doc.setTextColor(...MUTED);
+  doc.text("/100", M+22, y+10);
+  doc.setFontSize(12);
+  doc.setFont("helvetica","bold");
+  doc.setTextColor(...vColor);
+  doc.text(v.vd, M+35, y+6);
+
+  if(S.contested){ doc.setFontSize(8); doc.setTextColor(...YELLOW); doc.text("⚡ CONTESTED — Swarm divided", M+35, y+12); }
+  if(S.blocked)  { doc.setFontSize(8); doc.setTextColor(...PURPLE); doc.text("BLOCKED — Regulatory risk", M+35, y+12); }
+
+  doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...MUTED);
+  doc.text(`${S.flips} stance flip${S.flips!==1?"s":""}   ${S.consensus!=null?S.consensus+"% consensus":""}   ${DEMO_AGENTS.length} agents`, M, y+18);
+  y += 26;
+  hline(); y += 2;
+
+  // ── PILLAR SCORES ─────────────────────────────────────────
+  label("Evaluation Pillars");
+  y += 1;
+  const pillarColors = { market:CYAN, revenue:YELLOW, adoption:[56,189,248], competition:[244,114,182] };
+  PILLARS.forEach(p => {
+    pageCheck(12);
+    scoreBar(p.icon+" "+p.label, S.pS[p.key]||0, pillarColors[p.key]||CYAN);
+  });
+  hline(); y += 2;
+
+  // ── WAR ROOM TRANSCRIPT ───────────────────────────────────
+  label("War Room Transcript");
+  y += 2;
+
+  const transcript = S.log.filter(m =>
+    m.type === "agent_result" || m.type === "pillar_start" || m.type === "round_complete"
+  );
+
+  transcript.forEach(msg => {
+    pageCheck(18);
+
+    if(msg.type === "round_complete"){
+      y += 2;
+      doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...MUTED);
+      doc.text(`── ROUND ${msg.round} COMPLETE ──`, W/2, y, {align:"center"});
+      y += 5;
+    }
+    else if(msg.type === "pillar_start"){
+      y += 1;
+      doc.setFontSize(8); doc.setFont("helvetica","bold");
+      const pc = pillarColors[msg.pillar] || CYAN;
+      doc.setTextColor(...pc);
+      doc.text((msg.icon||"")+" "+msg.label.toUpperCase()+(msg.round?` · ROUND ${msg.round}`:""), M, y);
+      y += 5;
+    }
+    else if(msg.type === "agent_result"){
+      const stanceColor = msg.stance==="bullish" ? CYAN : RED;
+      // Agent name + stance
+      doc.setFontSize(8); doc.setFont("helvetica","bold");
+      doc.setTextColor(...TEXT);
+      doc.text(`${msg.agent_avatar||""} ${msg.agent_name||""}`, M, y);
+      doc.setTextColor(...MUTED);
+      doc.text(msg.agent_role||"", M+38, y);
+      if(msg.flipped){ doc.setTextColor(...YELLOW); doc.text("↩ FLIPPED", M+80, y); }
+      doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...stanceColor);
+      const stanceLabel = (msg.stance==="bullish"?"▲ BULLISH":"▼ BEARISH")+" "+msg.confidence+"%";
+      doc.text(stanceLabel, W-M, y, {align:"right"});
+      y += 4;
+      // Reasoning
+      doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...MUTED);
+      const lines = doc.splitTextToSize(msg.reasoning||"", CW-4);
+      doc.text(lines, M+4, y);
+      y += lines.length * 3.6 + 3;
+    }
+  });
+
+  // ── GOD VIEW HISTORY ──────────────────────────────────────
+  if(S.godH.length){
+    pageCheck(20);
+    hline(); y += 2;
+    label("God View — What-If Scenarios");
+    y += 1;
+    S.godH.forEach((h,i) => {
+      pageCheck(10);
+      const hc = h.c==="cyan"?CYAN:h.c==="red"?RED:YELLOW;
+      doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...MUTED);
+      doc.text(`${i+1}.`, M, y);
+      doc.setTextColor(...TEXT); doc.setFont("helvetica","normal");
+      const sc_lines = doc.splitTextToSize(h.sc, CW-20);
+      doc.text(sc_lines, M+6, y);
+      doc.setFont("helvetica","bold"); doc.setTextColor(...CYAN);
+      doc.text(h.s+"/100", W-M, y, {align:"right"});
+      if(h.delta!==0){
+        doc.setFontSize(7); doc.setTextColor(h.delta>0?...[100,220,150]:...RED);
+        doc.text((h.delta>0?"+":"")+h.delta+" pts", W-M-14, y+3, {align:"right"});
+      }
+      y += sc_lines.length*4 + 4;
+    });
+  }
+
+  // ── ON-CHAIN ──────────────────────────────────────────────
+  if(S.tx){
+    pageCheck(16);
+    hline(); y += 2;
+    label("On-Chain Verification");
+    bold("Verdict stored on StarkNet Sepolia", PURPLE, 9);
+    body(S.tx, MUTED, 8);
+    body("https://sepolia.starkscan.co/tx/"+S.tx, PURPLE, 8);
+  }
+
+  // ── FOOTER ────────────────────────────────────────────────
+  const pages = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(...MUTED);
+    doc.text("Powered by StarkNet · StarkZap · StarkAgents", W/2, 290, {align:"center"});
+    doc.text(`Page ${i}/${pages}`, W-M, 290, {align:"right"});
+  }
+
+  const filename = (S.inp.name||"startup").replace(/\s+/g,"-").toLowerCase()+"-pitch-report.pdf";
+  doc.save(filename);
+  notify("Pitch report downloaded!");
+}
+
+</body>
+</html>
