@@ -1032,6 +1032,8 @@ function genR(pillar, role, topic, bull, sn){
 // ============================================================
 // PROVING / ON-CHAIN
 // ============================================================
+const VERDICT_REGISTRY = "0x028c860e92e39b86ca995d56b30615c357274790204deeae7598c887d455754c";
+
 function runProving(){
   go("proving");
   let p = 0;
@@ -1039,10 +1041,10 @@ function runProving(){
     p += Math.random()*9+3;
     if(p >= 100){
       p = 100; clearInterval(iv);
-      // Real StarkZap wallet.execute() would go here:
-      // const tx = await wallet.execute({ contractAddress, entrypoint:"submit_verdict", calldata:[...] });
-      const h = "0123456789abcdef";
-      S.tx = "0x0"+Array.from({length:16},()=>h[~~(Math.random()*16)]).join("");
+      // Contract: VERDICT_REGISTRY on StarkNet Sepolia
+      // Real wallet.execute() call when StarkZap SDK is integrated:
+      // const tx = await wallet.execute({ contractAddress: VERDICT_REGISTRY, entrypoint:"submit_verdict", calldata:[...] });
+      S.tx = S.verdict?.idea_hash || ("0x0"+Array.from({length:16},()=>"0123456789abcdef"[~~(Math.random()*16)]).join(""));
       setTimeout(()=>{ S.scenario=null; go("verdict"); }, 600);
     }
     const b=$("pvB"), t=$("pvT");

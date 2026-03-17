@@ -1,0 +1,1 @@
+{"version":1,"contracts":[{"id":"2mkc6nh2qmg8m","package_name":"starkagents","contract_name":"VerdictRegistry","module_path":"starkagents::verdict_registry::VerdictRegistry","artifacts":{"sierra":"starkagents_VerdictRegistry.contract_class.json","casm":"starkagents_VerdictRegistry.compiled_contract_class.json"}}]}
