@@ -425,20 +425,20 @@ function vConnect(){
 }
 
 // ---- HOME ----
-// Swarm orbs — organic positions in a 900×280 space
+// Swarm orbs — bb1 bubble-map style, organic scatter, varied sizes
 const SWARM_ORBS = [
-  {av:"🌊",name:"Ψ-2041",role:"Market Oracle",    c:"#00FFD4", lx:8,  ly:16, fi:0},
-  {av:"📈",name:"Ω-8873",role:"Trend Analyst",    c:"#34D399", lx:18, ly:70, fi:1},
-  {av:"💰",name:"Δ-1159",role:"Econ Killer",      c:"#FBBF24", lx:30, ly:27, fi:2},
-  {av:"🎯",name:"Λ-7766",role:"Psyche Hacker",    c:"#38BDF8", lx:52, ly:13, fi:3},
-  {av:"🔄",name:"Φ-3302",role:"Loop Architect",   c:"#818CF8", lx:60, ly:59, fi:4},
-  {av:"⚔️", name:"Θ-9915",role:"Red Blade",       c:"#F87171", lx:72, ly:21, fi:5},
-  {av:"🛡️", name:"Ξ-5508",role:"Moat Guardian",   c:"#FB923C", lx:78, ly:73, fi:0},
-  {av:"⚡",name:"Π-6641",role:"Build Wrecker",    c:"#94A3B8", lx:86, ly:41, fi:1},
-  {av:"👁️", name:"Ζ-1287",role:"Policy Warden",   c:"#C084FC", lx:22, ly:41, fi:2},
-  {av:"🚀",name:"Κ-3394",role:"Viral Phantom",    c:"#4ADE80", lx:64, ly:88, fi:3},
-  {av:"🦈",name:"Ρ-5571",role:"VC Predator",      c:"#FF6B8A", lx:94, ly:62, fi:4},
-  {av:"💎",name:"Σ-4420",role:"Revenue Ghost",    c:"#F59E0B", lx:42, ly:77, fi:5},
+  {av:"🦈",name:"Ρ-5571",role:"VC Predator",      c:"#FF6B8A", lx:22, ly:44, sz:76, fi:0},
+  {av:"⚔️", name:"Θ-9915",role:"Red Blade",       c:"#F87171", lx:73, ly:22, sz:70, fi:1},
+  {av:"🌊",name:"Ψ-2041",role:"Market Oracle",    c:"#00FFD4", lx:12, ly:20, sz:66, fi:2},
+  {av:"💰",name:"Δ-1159",role:"Econ Killer",      c:"#FBBF24", lx:33, ly:28, sz:62, fi:3},
+  {av:"🚀",name:"Κ-3394",role:"Viral Phantom",    c:"#4ADE80", lx:46, ly:36, sz:60, fi:4},
+  {av:"👁️", name:"Ζ-1287",role:"Policy Warden",   c:"#C084FC", lx:59, ly:54, sz:56, fi:5},
+  {av:"🎯",name:"Λ-7766",role:"Psyche Hacker",    c:"#38BDF8", lx:55, ly:18, sz:52, fi:0},
+  {av:"🔄",name:"Φ-3302",role:"Loop Architect",   c:"#818CF8", lx:38, ly:64, sz:50, fi:1},
+  {av:"🛡️", name:"Ξ-5508",role:"Moat Guardian",   c:"#FB923C", lx:79, ly:66, sz:48, fi:2},
+  {av:"⚡",name:"Π-6641",role:"Build Wrecker",    c:"#94A3B8", lx:88, ly:38, sz:46, fi:3},
+  {av:"📈",name:"Ω-8873",role:"Trend Analyst",    c:"#34D399", lx:18, ly:72, sz:46, fi:4},
+  {av:"💎",name:"Σ-4420",role:"Revenue Ghost",    c:"#F59E0B", lx:66, ly:80, sz:44, fi:5},
 ];
 
 function vHome(){
@@ -467,78 +467,79 @@ function vHome(){
       <div style="margin-top:12px;font-size:11px;color:rgba(168,85,247,.3);font-weight:400;letter-spacing:.02em">Free · No sign-up · On-chain in 60s</div>
     </div>
 
-    <!-- SWARM CONSTELLATION — no boxes, pure floating orbs -->
-    <div style="position:relative;width:100%;height:300px;overflow:hidden;margin-bottom:12px">
+    <!-- BUBBLE MAP — bb1 style, large, organic scatter -->
+    <div style="position:relative;width:100%;height:520px;overflow:hidden;margin-bottom:0">
 
-      <!-- radial glow at center -->
-      <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:200px;background:radial-gradient(ellipse,rgba(109,40,217,.12) 0%,transparent 70%);pointer-events:none"></div>
+      <!-- ambient radial glow -->
+      <div style="position:absolute;left:45%;top:45%;transform:translate(-50%,-50%);width:700px;height:380px;background:radial-gradient(ellipse,rgba(109,40,217,.1) 0%,transparent 68%);pointer-events:none"></div>
+      <div style="position:absolute;left:70%;top:30%;width:300px;height:180px;background:radial-gradient(ellipse,rgba(255,107,138,.05) 0%,transparent 70%);pointer-events:none"></div>
+      <div style="position:absolute;left:20%;top:60%;width:260px;height:160px;background:radial-gradient(ellipse,rgba(0,255,212,.04) 0%,transparent 70%);pointer-events:none"></div>
 
-      <!-- SVG neural network lines -->
-      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 900 300" preserveAspectRatio="none">
-        <g stroke="#7C3AED" stroke-width=".9" opacity=".18" fill="none">
-          <line x1="72"  y1="48"  x2="198" y2="123"/>
-          <line x1="72"  y1="48"  x2="270" y2="81"/>
-          <line x1="198" y1="123" x2="162" y2="210"/>
-          <line x1="198" y1="123" x2="270" y2="81"/>
-          <line x1="270" y1="81"  x2="468" y2="39"/>
-          <line x1="468" y1="39"  x2="648" y2="63"/>
-          <line x1="468" y1="39"  x2="540" y2="177"/>
-          <line x1="540" y1="177" x2="378" y2="231"/>
-          <line x1="540" y1="177" x2="576" y2="264"/>
-          <line x1="540" y1="177" x2="702" y2="219"/>
-          <line x1="648" y1="63"  x2="774" y2="123"/>
-          <line x1="702" y1="219" x2="774" y2="123"/>
-          <line x1="774" y1="123" x2="846" y2="186"/>
+      <!-- SVG connection lines — matches orb pixel positions in 1000×520 viewBox -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 1000 520" preserveAspectRatio="none">
+        <g stroke="#7C3AED" stroke-width="1" opacity=".2" fill="none">
+          <line x1="120" y1="104" x2="220" y2="229"/>
+          <line x1="120" y1="104" x2="330" y2="146"/>
+          <line x1="220" y1="229" x2="330" y2="146"/>
+          <line x1="220" y1="229" x2="180" y2="374"/>
+          <line x1="330" y1="146" x2="460" y2="187"/>
+          <line x1="460" y1="187" x2="550" y2="94"/>
+          <line x1="460" y1="187" x2="590" y2="281"/>
+          <line x1="550" y1="94"  x2="730" y2="114"/>
+          <line x1="730" y1="114" x2="880" y2="197"/>
+          <line x1="590" y1="281" x2="790" y2="343"/>
+          <line x1="790" y1="343" x2="880" y2="197"/>
+          <line x1="590" y1="281" x2="380" y2="333"/>
+          <line x1="660" y1="416" x2="790" y2="343"/>
+          <line x1="380" y1="333" x2="180" y2="374"/>
         </g>
-        <g stroke="#C084FC" stroke-width=".6" opacity=".1" fill="none">
-          <line x1="270" y1="81"  x2="540" y2="177"/>
-          <line x1="162" y1="210" x2="378" y2="231"/>
-          <line x1="648" y1="63"  x2="846" y2="186"/>
-          <line x1="378" y1="231" x2="576" y2="264"/>
+        <g stroke="#C084FC" stroke-width=".7" opacity=".12" fill="none">
+          <line x1="330" y1="146" x2="590" y2="281"/>
+          <line x1="220" y1="229" x2="460" y2="187"/>
+          <line x1="550" y1="94"  x2="880" y2="197"/>
+          <line x1="380" y1="333" x2="660" y2="416"/>
         </g>
       </svg>
 
-      <!-- Agent orbs — no boxes, just floating circles -->
+      <!-- Agent orbs — sized by importance, floating freely -->
       ${SWARM_ORBS.map((a,i)=>`
         <div style="position:absolute;left:${a.lx}%;top:${a.ly}%;transform:translate(-50%,-50%);
-          width:44px;height:44px;border-radius:50%;cursor:pointer;
-          background:radial-gradient(circle at 35% 35%,${a.c}28,${a.c}06);
-          border:1.5px solid ${a.c}50;
-          display:flex;align-items:center;justify-content:center;
-          font-size:18px;
-          box-shadow:0 0 18px ${a.c}30,inset 0 0 8px ${a.c}10;
-          animation:float${a.fi} ${3.8+i*.35}s ${i*.2}s ease-in-out infinite;
-          transition:all .2s;z-index:2"
-          title="${a.name} · ${a.role}"
-          onmouseover="this.style.boxShadow='0 0 32px ${a.c}60,inset 0 0 12px ${a.c}20';this.style.transform='translate(-50%,-50%) scale(1.18)'"
-          onmouseout="this.style.boxShadow='0 0 18px ${a.c}30,inset 0 0 8px ${a.c}10';this.style.transform='translate(-50%,-50%) scale(1)'">
-          ${a.av}
-        </div>
-        <div style="position:absolute;left:${a.lx}%;top:calc(${a.ly}% + 28px);transform:translateX(-50%);
-          font-size:8px;font-weight:600;color:${a.c}99;letter-spacing:.03em;white-space:nowrap;
-          animation:float${a.fi} ${3.8+i*.35}s ${i*.2}s ease-in-out infinite;pointer-events:none">
-          ${a.name}
+          width:${a.sz}px;height:${a.sz}px;border-radius:50%;cursor:pointer;
+          background:radial-gradient(circle at 32% 32%,${a.c}22,${a.c}05);
+          border:2px solid ${a.c}45;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+          box-shadow:0 0 ${a.sz*.4}px ${a.c}28,inset 0 0 ${a.sz*.15}px ${a.c}12;
+          animation:float${a.fi} ${4+i*.3}s ${i*.18}s ease-in-out infinite;
+          transition:box-shadow .2s,transform .2s;z-index:${3+i%3}"
+          onmouseover="this.style.boxShadow='0 0 ${a.sz*.7}px ${a.c}55,inset 0 0 ${a.sz*.2}px ${a.c}25';this.style.transform='translate(-50%,-50%) scale(1.12)';this.style.zIndex=20"
+          onmouseout="this.style.boxShadow='0 0 ${a.sz*.4}px ${a.c}28,inset 0 0 ${a.sz*.15}px ${a.c}12';this.style.transform='translate(-50%,-50%) scale(1)';this.style.zIndex=${3+i%3}">
+          <span style="font-size:${a.sz*.32}px;line-height:1">${a.av}</span>
+          ${a.sz>=52?`<span style="font-size:${Math.max(7,a.sz*.11)}px;font-weight:700;color:${a.c}cc;letter-spacing:.02em;font-family:'DM Sans',sans-serif">${a.name}</span>`:""}
         </div>
       `).join("")}
 
-      <!-- Ghost orbs — imply hundreds more in the dark -->
-      ${[[14,52],[35,88],[47,44],[55,82],[67,43],[83,77],[90,22],[25,14]].map((p,i)=>`
+      <!-- Ghost orbs — many, varied sizes, implying the full 500+ swarm -->
+      ${[
+        [6,38,28],[9,82,22],[16,54,18],[26,90,32],[35,12,20],[41,46,16],[48,72,26],[52,90,18],
+        [62,10,22],[68,44,16],[75,88,30],[84,14,18],[91,70,24],[96,30,20],[3,66,16],[30,76,14]
+      ].map((p,i)=>`
         <div style="position:absolute;left:${p[0]}%;top:${p[1]}%;transform:translate(-50%,-50%);
-          width:${18+i%3*6}px;height:${18+i%3*6}px;border-radius:50%;
-          background:rgba(109,40,217,${.04+i*.01});
-          border:1px solid rgba(139,92,246,${.06+i*.01});
-          filter:blur(${.5+i%2*.5}px);pointer-events:none;z-index:1">
+          width:${p[2]}px;height:${p[2]}px;border-radius:50%;
+          background:radial-gradient(circle,rgba(139,92,246,${.06+i*.004}),transparent);
+          border:1px solid rgba(139,92,246,${.08+i*.003});
+          filter:blur(${i%3===0?.3:.8}px);pointer-events:none;z-index:1">
         </div>
       `).join("")}
 
-      <!-- fade bottom to darkness -->
-      <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,rgba(6,7,20,1));pointer-events:none"></div>
+      <!-- fade edges -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:100px;background:linear-gradient(transparent,rgba(6,7,20,.95));pointer-events:none"></div>
+      <div style="position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(rgba(6,7,20,.3),transparent);pointer-events:none"></div>
     </div>
 
-    <!-- bottom label — no box -->
-    <div style="text-align:center;margin-bottom:44px">
-      <span style="font-size:10px;color:rgba(139,92,246,.3);font-weight:500;letter-spacing:.08em">
-        ↑ the swarm · 500+ agents · +488 classified
+    <!-- caption below bubble map -->
+    <div style="text-align:center;padding:14px 0 40px">
+      <span style="font-size:11px;color:rgba(139,92,246,.28);font-weight:500;letter-spacing:.06em">
+        500+ agents · +488 classified · each with a different agenda
       </span>
     </div>
 
