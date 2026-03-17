@@ -238,18 +238,18 @@ const VERDICT_REGISTRY = "0x028c860e92e39b86ca995d56b30615c357274790204deeae7598
 // AGENT ROSTER (mirrors backend)
 // ============================================================
 const ALL_AGENTS = {
-  MarketPulse:  { id:"psi-2041",   name:"Agent Ψ-2041", role:"Market Demand Analyst",    cat:"MARKET INTELLIGENCE",    av:"🌊", c:"#00FFD4" },
-  TrendSeeker:  { id:"omega-trend",name:"Agent Ω-8873", role:"Trend & Timing Specialist", cat:"MARKET INTELLIGENCE",    av:"📈", c:"#34D399" },
-  UnitEcon:     { id:"delta-1159", name:"Agent Δ-1159", role:"Unit Economics Analyst",    cat:"FINANCIAL ANALYSIS",     av:"💰", c:"#FBBF24" },
-  RevenueScout: { id:"sigma-rev",  name:"Agent Σ-4420", role:"Business Model Evaluator",  cat:"FINANCIAL ANALYSIS",     av:"💎", c:"#F59E0B" },
-  FirstClick:   { id:"lambda-7766",name:"Agent Λ-7766", role:"Early Adopter Simulator",   cat:"USER PSYCHOLOGY",        av:"🎯", c:"#38BDF8" },
-  StickyLoop:   { id:"phi-3302",   name:"Agent Φ-3302", role:"Retention & Habit Analyst", cat:"USER PSYCHOLOGY",        av:"🔄", c:"#818CF8" },
-  RedTeam:      { id:"theta-9915", name:"Agent Θ-9915", role:"Competitor Simulator",      cat:"COMPETITIVE WARFARE",    av:"⚔️", c:"#F87171" },
-  MoatInspector:{ id:"xi-5508",   name:"Agent Ξ-5508", role:"Defensibility Analyst",     cat:"COMPETITIVE WARFARE",    av:"🛡️", c:"#FB923C" },
-  BuildCheck:   { id:"pi-6641",    name:"Agent Π-6641", role:"Technical Architect",       cat:"TECHNICAL FEASIBILITY",  av:"⚙️", c:"#94A3B8" },
-  PolicyScan:   { id:"zeta-1287",  name:"Agent Ζ-1287", role:"Regulatory Risk Analyst",   cat:"REGULATORY & COMPLIANCE",av:"📋", c:"#C084FC" },
-  ViralEngine:  { id:"kappa-3394", name:"Agent Κ-3394", role:"Growth Hacker",             cat:"GROWTH & DISTRIBUTION",  av:"🚀", c:"#4ADE80" },
-  SkepticalVC:  { id:"rho-5571",   name:"Agent Ρ-5571", role:"VC Devil's Advocate",       cat:"INVESTOR PERSPECTIVE",   av:"🦈", c:"#FF6B8A" },
+  MarketPulse:  { id:"psi-2041",   name:"Agent Ψ-2041", codename:"VEGA",   role:"Market Demand Analyst",    cat:"MARKET INTEL",   av:"Ψ", c:"#00FFD4" },
+  TrendSeeker:  { id:"omega-trend",name:"Agent Ω-8873", codename:"APEX",   role:"Trend & Timing Specialist", cat:"MARKET INTEL",   av:"Ω", c:"#34D399" },
+  UnitEcon:     { id:"delta-1159", name:"Agent Δ-1159", codename:"KIRA",   role:"Unit Economics Analyst",    cat:"FINANCIALS",     av:"Δ", c:"#FBBF24" },
+  RevenueScout: { id:"sigma-rev",  name:"Agent Σ-4420", codename:"LUCRE",  role:"Business Model Evaluator",  cat:"FINANCIALS",     av:"Σ", c:"#F59E0B" },
+  FirstClick:   { id:"lambda-7766",name:"Agent Λ-7766", codename:"NOVA",   role:"Early Adopter Simulator",   cat:"USER MIND",      av:"Λ", c:"#38BDF8" },
+  StickyLoop:   { id:"phi-3302",   name:"Agent Φ-3302", codename:"GRIP",   role:"Retention & Habit Analyst", cat:"USER MIND",      av:"Φ", c:"#818CF8" },
+  RedTeam:      { id:"theta-9915", name:"Agent Θ-9915", codename:"BLADE",  role:"Competitor Simulator",      cat:"WARFARE",        av:"Θ", c:"#F87171" },
+  MoatInspector:{ id:"xi-5508",   name:"Agent Ξ-5508", codename:"IRON",   role:"Defensibility Analyst",     cat:"WARFARE",        av:"Ξ", c:"#FB923C" },
+  BuildCheck:   { id:"pi-6641",    name:"Agent Π-6641", codename:"FORGE",  role:"Technical Architect",       cat:"TECHNICAL",      av:"Π", c:"#94A3B8" },
+  PolicyScan:   { id:"zeta-1287",  name:"Agent Ζ-1287", codename:"WARD",   role:"Regulatory Risk Analyst",   cat:"COMPLIANCE",     av:"Ζ", c:"#C084FC" },
+  ViralEngine:  { id:"kappa-3394", name:"Agent Κ-3394", codename:"FLUX",   role:"Growth Hacker",             cat:"GROWTH",         av:"Κ", c:"#4ADE80" },
+  SkepticalVC:  { id:"rho-5571",   name:"Agent Ρ-5571", codename:"FANG",   role:"VC Devil's Advocate",       cat:"INVESTOR",       av:"Ρ", c:"#FF6B8A" },
 };
 
 // Demo agents (matches backend DEMO_AGENT_KEYS)
@@ -279,14 +279,14 @@ const FIELDS = [
 
 // Agent categories for display
 const CATEGORIES = [
-  { label:"MARKET INTELLIGENCE",     keys:["MarketPulse","TrendSeeker"] },
-  { label:"FINANCIAL ANALYSIS",      keys:["UnitEcon","RevenueScout"] },
-  { label:"USER PSYCHOLOGY",         keys:["FirstClick","StickyLoop"] },
-  { label:"COMPETITIVE WARFARE",     keys:["RedTeam","MoatInspector"] },
-  { label:"TECHNICAL FEASIBILITY",   keys:["BuildCheck"] },
-  { label:"REGULATORY & COMPLIANCE", keys:["PolicyScan"] },
-  { label:"GROWTH & DISTRIBUTION",   keys:["ViralEngine"] },
-  { label:"INVESTOR PERSPECTIVE",    keys:["SkepticalVC"] },
+  { label:"MARKET INTEL",   keys:["MarketPulse","TrendSeeker"] },
+  { label:"FINANCIALS",     keys:["UnitEcon","RevenueScout"] },
+  { label:"USER MIND",      keys:["FirstClick","StickyLoop"] },
+  { label:"WARFARE",        keys:["RedTeam","MoatInspector"] },
+  { label:"TECHNICAL",      keys:["BuildCheck"] },
+  { label:"COMPLIANCE",     keys:["PolicyScan"] },
+  { label:"GROWTH",         keys:["ViralEngine"] },
+  { label:"INVESTOR",       keys:["SkepticalVC"] },
 ];
 
 // ============================================================
@@ -355,10 +355,23 @@ function agentCategoryBlocks(compact){
     const agents = cat.keys.map(k => ALL_AGENTS[k]);
     const isDemo = cat.keys.some(k => DEMO_KEYS.includes(k));
     if(compact && !isDemo) return "";
-    return `<div class="cat-group">
-      <div class="cat-label">${cat.label}</div>
-      <div class="agent-pills">
-        ${agents.map(a=>`<span class="agent-pill" style="background:${a.c}08;border:1px solid ${a.c}12;color:${a.c}">${a.av} ${a.role.split(" ")[0]}</span>`).join("")}
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:8px;font-weight:700;color:rgba(168,85,247,.28);letter-spacing:.18em;margin-bottom:7px;font-family:'DM Sans',sans-serif">${cat.label}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${agents.map(a=>`
+          <div style="display:flex;align-items:center;gap:7px;
+            padding:6px 11px 6px 9px;border-radius:4px;
+            background:rgba(10,8,24,.7);
+            border-left:2px solid ${a.c};
+            border-top:1px solid ${a.c}18;
+            border-right:1px solid ${a.c}10;
+            border-bottom:1px solid ${a.c}10">
+            <span style="font-size:12px;font-weight:800;color:${a.c};font-family:'JetBrains Mono',monospace;line-height:1;min-width:14px;text-align:center">${a.av}</span>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:rgba(230,220,255,.85);font-family:'DM Sans',sans-serif;letter-spacing:.05em;line-height:1.2">${a.codename}</div>
+              <div style="font-size:7.5px;font-weight:400;color:rgba(168,85,247,.35);font-family:'DM Sans',sans-serif;margin-top:1px">${a.name}</div>
+            </div>
+          </div>`).join("")}
       </div>
     </div>`;
   }).join("");
