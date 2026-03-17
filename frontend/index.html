@@ -425,127 +425,135 @@ function vConnect(){
 }
 
 // ---- HOME ----
-// Anime-style agent roster shown on home (all 12 + ghost agents to imply hundreds)
-const ANIME_AGENTS = [
-  {av:"🌊",name:"Ψ-2041",role:"Market Oracle",    c:"#00FFD4"},
-  {av:"📈",name:"Ω-8873",role:"Trend Hunter",     c:"#34D399"},
-  {av:"💰",name:"Δ-1159",role:"Econ Killer",      c:"#FBBF24"},
-  {av:"💎",name:"Σ-4420",role:"Revenue Ghost",    c:"#F59E0B"},
-  {av:"🎯",name:"Λ-7766",role:"Psyche Hacker",    c:"#38BDF8"},
-  {av:"🔄",name:"Φ-3302",role:"Loop Architect",   c:"#818CF8"},
-  {av:"⚔️", name:"Θ-9915",role:"Red Blade",       c:"#F87171"},
-  {av:"🛡️", name:"Ξ-5508",role:"Moat Guardian",   c:"#FB923C"},
-  {av:"⚡",name:"Π-6641",role:"Build Wrecker",    c:"#94A3B8"},
-  {av:"👁️", name:"Ζ-1287",role:"Policy Warden",   c:"#C084FC"},
-  {av:"🚀",name:"Κ-3394",role:"Viral Phantom",    c:"#4ADE80"},
-  {av:"🦈",name:"Ρ-5571",role:"VC Predator",      c:"#FF6B8A"},
-];
-// ghost placeholders to imply massive swarm
-const GHOST_AGENTS = [
-  {av:"🌑",name:"???",c:"rgba(139,92,246,.25)"},{av:"🌑",name:"???",c:"rgba(139,92,246,.2)"},
-  {av:"🌑",name:"???",c:"rgba(139,92,246,.15)"},{av:"🌑",name:"???",c:"rgba(139,92,246,.18)"},
-  {av:"🌑",name:"???",c:"rgba(168,85,247,.2)"},{av:"🌑",name:"???",c:"rgba(168,85,247,.15)"},
+// Swarm orbs — organic positions in a 900×280 space
+const SWARM_ORBS = [
+  {av:"🌊",name:"Ψ-2041",role:"Market Oracle",    c:"#00FFD4", lx:8,  ly:16, fi:0},
+  {av:"📈",name:"Ω-8873",role:"Trend Analyst",    c:"#34D399", lx:18, ly:70, fi:1},
+  {av:"💰",name:"Δ-1159",role:"Econ Killer",      c:"#FBBF24", lx:30, ly:27, fi:2},
+  {av:"🎯",name:"Λ-7766",role:"Psyche Hacker",    c:"#38BDF8", lx:52, ly:13, fi:3},
+  {av:"🔄",name:"Φ-3302",role:"Loop Architect",   c:"#818CF8", lx:60, ly:59, fi:4},
+  {av:"⚔️", name:"Θ-9915",role:"Red Blade",       c:"#F87171", lx:72, ly:21, fi:5},
+  {av:"🛡️", name:"Ξ-5508",role:"Moat Guardian",   c:"#FB923C", lx:78, ly:73, fi:0},
+  {av:"⚡",name:"Π-6641",role:"Build Wrecker",    c:"#94A3B8", lx:86, ly:41, fi:1},
+  {av:"👁️", name:"Ζ-1287",role:"Policy Warden",   c:"#C084FC", lx:22, ly:41, fi:2},
+  {av:"🚀",name:"Κ-3394",role:"Viral Phantom",    c:"#4ADE80", lx:64, ly:88, fi:3},
+  {av:"🦈",name:"Ρ-5571",role:"VC Predator",      c:"#FF6B8A", lx:94, ly:62, fi:4},
+  {av:"💎",name:"Σ-4420",role:"Revenue Ghost",    c:"#F59E0B", lx:42, ly:77, fi:5},
 ];
 
 function vHome(){
-  const allCards = [...ANIME_AGENTS, ...GHOST_AGENTS];
-  return `${hdr()}<div class="mn fu" style="font-family:'DM Sans',sans-serif;padding-bottom:40px">
+  return `${hdr()}<div style="font-family:'DM Sans',sans-serif;padding-bottom:48px;position:relative;z-index:10">
 
     <!-- HERO -->
-    <div style="text-align:center;padding:44px 16px 32px">
-      <div style="display:inline-block;padding:4px 14px;border-radius:20px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);margin-bottom:18px">
-        <span style="font-size:10px;font-weight:700;color:#C084FC;letter-spacing:.14em">⬡ POWERED BY STARKNET</span>
-      </div>
-      <h2 style="font-size:32px;font-weight:700;color:#F5F0FF;margin-bottom:12px;line-height:1.25;letter-spacing:-.5px">
-        Will your startup<br/><span style="background:linear-gradient(135deg,#A855F7,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">survive the swarm?</span>
+    <div style="text-align:center;padding:52px 24px 36px;max-width:700px;margin:0 auto">
+      <h2 style="font-size:32px;font-weight:700;color:#F5F0FF;margin-bottom:14px;line-height:1.25;letter-spacing:-.5px">
+        Will your startup<br/><span style="background:linear-gradient(135deg,#C084FC,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">survive the swarm?</span>
       </h2>
-      <p style="font-size:14px;color:rgba(200,185,255,.55);max-width:420px;margin:0 auto 28px;line-height:1.65;font-weight:400">
-        Hundreds of AI agents with conflicting biases tear your startup apart.<br/>The verdict lives on-chain. Forever.
+      <p style="font-size:14px;color:rgba(200,185,255,.5);max-width:400px;margin:0 auto 32px;line-height:1.7;font-weight:400">
+        Hundreds of AI agents with opposing biases dissect your pitch.<br/>Verdict sealed on StarkNet. Forever.
       </p>
       <button onclick="go('input')" style="
         display:inline-flex;align-items:center;gap:10px;
-        padding:16px 36px;border-radius:14px;border:none;cursor:pointer;
-        background:linear-gradient(135deg,#9333EA,#7C3AED);
+        padding:17px 40px;border-radius:50px;border:none;cursor:pointer;
+        background:linear-gradient(135deg,#9333EA,#6D28D9);
         color:#fff;font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif;
-        box-shadow:0 0 40px rgba(147,51,234,.5),0 8px 24px rgba(0,0,0,.4);
-        transition:all .25s;letter-spacing:-.2px
-      " onmouseover="this.style.boxShadow='0 0 60px rgba(147,51,234,.7),0 8px 28px rgba(0,0,0,.5)';this.style.transform='translateY(-2px)'"
-         onmouseout="this.style.boxShadow='0 0 40px rgba(147,51,234,.5),0 8px 24px rgba(0,0,0,.4)';this.style.transform='translateY(0)'">
-        <span style="font-size:18px">⚡</span>
-        <span>Throw Your Startup to the Swarm</span>
-        <span style="opacity:.6;font-size:13px">→</span>
+        box-shadow:0 0 50px rgba(147,51,234,.45),0 8px 28px rgba(0,0,0,.5);
+        transition:all .25s;letter-spacing:-.1px
+      " onmouseover="this.style.boxShadow='0 0 70px rgba(147,51,234,.65),0 10px 32px rgba(0,0,0,.6)';this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.boxShadow='0 0 50px rgba(147,51,234,.45),0 8px 28px rgba(0,0,0,.5)';this.style.transform='none'">
+        <span style="font-size:17px">⚡</span>
+        Throw your startup to the swarm
       </button>
-      <div style="margin-top:14px;font-size:11px;color:rgba(168,85,247,.35);font-weight:500">Free · No sign-up · Verdict on-chain in 60s</div>
+      <div style="margin-top:12px;font-size:11px;color:rgba(168,85,247,.3);font-weight:400;letter-spacing:.02em">Free · No sign-up · On-chain in 60s</div>
     </div>
 
-    <!-- SWARM STATS -->
-    <div style="display:flex;justify-content:center;gap:32px;margin-bottom:36px;flex-wrap:wrap">
+    <!-- SWARM CONSTELLATION — no boxes, pure floating orbs -->
+    <div style="position:relative;width:100%;height:300px;overflow:hidden;margin-bottom:12px">
+
+      <!-- radial glow at center -->
+      <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:200px;background:radial-gradient(ellipse,rgba(109,40,217,.12) 0%,transparent 70%);pointer-events:none"></div>
+
+      <!-- SVG neural network lines -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 900 300" preserveAspectRatio="none">
+        <g stroke="#7C3AED" stroke-width=".9" opacity=".18" fill="none">
+          <line x1="72"  y1="48"  x2="198" y2="123"/>
+          <line x1="72"  y1="48"  x2="270" y2="81"/>
+          <line x1="198" y1="123" x2="162" y2="210"/>
+          <line x1="198" y1="123" x2="270" y2="81"/>
+          <line x1="270" y1="81"  x2="468" y2="39"/>
+          <line x1="468" y1="39"  x2="648" y2="63"/>
+          <line x1="468" y1="39"  x2="540" y2="177"/>
+          <line x1="540" y1="177" x2="378" y2="231"/>
+          <line x1="540" y1="177" x2="576" y2="264"/>
+          <line x1="540" y1="177" x2="702" y2="219"/>
+          <line x1="648" y1="63"  x2="774" y2="123"/>
+          <line x1="702" y1="219" x2="774" y2="123"/>
+          <line x1="774" y1="123" x2="846" y2="186"/>
+        </g>
+        <g stroke="#C084FC" stroke-width=".6" opacity=".1" fill="none">
+          <line x1="270" y1="81"  x2="540" y2="177"/>
+          <line x1="162" y1="210" x2="378" y2="231"/>
+          <line x1="648" y1="63"  x2="846" y2="186"/>
+          <line x1="378" y1="231" x2="576" y2="264"/>
+        </g>
+      </svg>
+
+      <!-- Agent orbs — no boxes, just floating circles -->
+      ${SWARM_ORBS.map((a,i)=>`
+        <div style="position:absolute;left:${a.lx}%;top:${a.ly}%;transform:translate(-50%,-50%);
+          width:44px;height:44px;border-radius:50%;cursor:pointer;
+          background:radial-gradient(circle at 35% 35%,${a.c}28,${a.c}06);
+          border:1.5px solid ${a.c}50;
+          display:flex;align-items:center;justify-content:center;
+          font-size:18px;
+          box-shadow:0 0 18px ${a.c}30,inset 0 0 8px ${a.c}10;
+          animation:float${a.fi} ${3.8+i*.35}s ${i*.2}s ease-in-out infinite;
+          transition:all .2s;z-index:2"
+          title="${a.name} · ${a.role}"
+          onmouseover="this.style.boxShadow='0 0 32px ${a.c}60,inset 0 0 12px ${a.c}20';this.style.transform='translate(-50%,-50%) scale(1.18)'"
+          onmouseout="this.style.boxShadow='0 0 18px ${a.c}30,inset 0 0 8px ${a.c}10';this.style.transform='translate(-50%,-50%) scale(1)'">
+          ${a.av}
+        </div>
+        <div style="position:absolute;left:${a.lx}%;top:calc(${a.ly}% + 28px);transform:translateX(-50%);
+          font-size:8px;font-weight:600;color:${a.c}99;letter-spacing:.03em;white-space:nowrap;
+          animation:float${a.fi} ${3.8+i*.35}s ${i*.2}s ease-in-out infinite;pointer-events:none">
+          ${a.name}
+        </div>
+      `).join("")}
+
+      <!-- Ghost orbs — imply hundreds more in the dark -->
+      ${[[14,52],[35,88],[47,44],[55,82],[67,43],[83,77],[90,22],[25,14]].map((p,i)=>`
+        <div style="position:absolute;left:${p[0]}%;top:${p[1]}%;transform:translate(-50%,-50%);
+          width:${18+i%3*6}px;height:${18+i%3*6}px;border-radius:50%;
+          background:rgba(109,40,217,${.04+i*.01});
+          border:1px solid rgba(139,92,246,${.06+i*.01});
+          filter:blur(${.5+i%2*.5}px);pointer-events:none;z-index:1">
+        </div>
+      `).join("")}
+
+      <!-- fade bottom to darkness -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,rgba(6,7,20,1));pointer-events:none"></div>
+    </div>
+
+    <!-- bottom label — no box -->
+    <div style="text-align:center;margin-bottom:44px">
+      <span style="font-size:10px;color:rgba(139,92,246,.3);font-weight:500;letter-spacing:.08em">
+        ↑ the swarm · 500+ agents · +488 classified
+      </span>
+    </div>
+
+    <!-- BOTTOM STATS — inline text, zero boxes -->
+    <div style="display:flex;justify-content:center;align-items:center;gap:28px;flex-wrap:wrap">
       ${[
-        {v:"500+",l:"Agents in swarm",c:"#A855F7"},
-        {v:"4",l:"Debate rounds",c:"#34D399"},
-        {v:"∞",l:"Verifiable forever",c:"#38BDF8"},
-      ].map(s=>`<div style="text-align:center">
-        <div style="font-size:26px;font-weight:800;color:${s.c};line-height:1">${s.v}</div>
-        <div style="font-size:10px;color:rgba(200,185,255,.4);margin-top:3px;font-weight:500">${s.l}</div>
-      </div>`).join(`<div style="width:1px;background:rgba(139,92,246,.12);align-self:stretch"></div>`)}
-    </div>
-
-    <!-- AGENT SWARM GRID -->
-    <div style="margin-bottom:32px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:rgba(200,185,255,.7);letter-spacing:.08em">THE SWARM</div>
-        <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(139,92,246,.2),transparent)"></div>
-        <div style="font-size:10px;color:rgba(168,85,247,.4);font-weight:600">+488 classified</div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
-        ${allCards.map(a=>{
-          const isGhost = a.name==="???";
-          return `<div style="
-            border-radius:14px;padding:12px 8px;text-align:center;
-            background:${isGhost?"rgba(139,92,246,.03)":"rgba(18,16,42,.8)"};
-            border:1px solid ${isGhost?"rgba(139,92,246,.06)":"rgba(139,92,246,.1)"};
-            transition:all .2s;cursor:${isGhost?"default":"pointer"};
-            ${isGhost?"filter:blur(.5px)":""}"
-            ${isGhost?"":` onmouseover="this.style.borderColor='${a.c}30';this.style.background='rgba(18,16,42,.95)'" onmouseout="this.style.borderColor='rgba(139,92,246,.1)';this.style.background='rgba(18,16,42,.8)'"`}>
-            <div style="font-size:22px;margin-bottom:5px;line-height:1">${a.av}</div>
-            <div style="font-size:8px;font-weight:700;color:${isGhost?"rgba(139,92,246,.2)":a.c};letter-spacing:.04em;margin-bottom:2px">${a.name}</div>
-            ${!isGhost?`<div style="font-size:7.5px;color:rgba(200,185,255,.3);font-weight:500">${a.role}</div>`:""}
-          </div>`;
-        }).join("")}
-      </div>
-    </div>
-
-    <!-- SIMULATION PREVIEW -->
-    <div style="border-radius:18px;border:1px solid rgba(139,92,246,.15);background:linear-gradient(135deg,rgba(18,16,42,.9),rgba(13,11,30,.95));padding:20px;position:relative;overflow:hidden;margin-bottom:20px">
-      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 110%,rgba(139,92,246,.08) 0%,transparent 70%);pointer-events:none"></div>
-      <div style="font-size:10px;font-weight:700;color:rgba(200,185,255,.5);letter-spacing:.12em;margin-bottom:14px">⚡ LIVE DEBATE PREVIEW</div>
-      <div style="position:relative;height:90px;border-radius:12px;background:rgba(6,7,20,.6);border:1px solid rgba(139,92,246,.08);overflow:hidden;margin-bottom:14px">
-        ${ANIME_AGENTS.slice(0,6).map((a,i)=>{
-          const positions = [{l:"8%",t:"20%"},{l:"22%",t:"55%"},{l:"38%",t:"18%"},{l:"54%",t:"58%"},{l:"70%",t:"15%"},{l:"84%",t:"52%"}];
-          const p = positions[i];
-          return `<div style="position:absolute;left:${p.l};top:${p.t};width:28px;height:28px;border-radius:50%;
-            background:radial-gradient(circle,${a.c}20,${a.c}05);
-            border:1.5px solid ${a.c}40;
-            display:flex;align-items:center;justify-content:center;font-size:13px;
-            animation:float${i} ${3.5+i*.4}s ${i*.25}s ease-in-out infinite;
-            box-shadow:0 0 12px ${a.c}20">${a.av}</div>`;
-        }).join("")}
-        <!-- connection lines via SVG -->
-        <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.15" viewBox="0 0 400 90">
-          <line x1="40" y1="22" x2="96" y2="52" stroke="#A855F7" stroke-width=".8"/>
-          <line x1="96" y1="52" x2="160" y2="20" stroke="#A855F7" stroke-width=".8"/>
-          <line x1="160" y1="20" x2="224" y2="55" stroke="#7C3AED" stroke-width=".8"/>
-          <line x1="224" y1="55" x2="292" y2="17" stroke="#A855F7" stroke-width=".8"/>
-          <line x1="292" y1="17" x2="348" y2="49" stroke="#7C3AED" stroke-width=".8"/>
-          <line x1="40" y1="22" x2="160" y2="20" stroke="#9333EA" stroke-width=".5" opacity=".5"/>
-          <line x1="96" y1="52" x2="224" y2="55" stroke="#9333EA" stroke-width=".5" opacity=".5"/>
-        </svg>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <div style="width:6px;height:6px;border-radius:50%;background:#9333EA;box-shadow:0 0 8px #9333EA;animation:glowPulse 1.5s infinite"></div>
-        <span style="font-size:10px;color:rgba(200,185,255,.45);font-weight:500">Agents debating in real-time · Verdict published on-chain</span>
-        <button onclick="go('input')" style="margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid rgba(147,51,234,.3);background:rgba(147,51,234,.1);color:#C084FC;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Start →</button>
-      </div>
+        {v:"2 rounds",l:"of debate"},
+        {v:"4 pillars",l:"of analysis"},
+        {v:"on-chain",l:"verdict"},
+      ].map((s,i)=>`
+        ${i>0?`<span style="color:rgba(139,92,246,.15);font-size:18px">·</span>`:""}
+        <span style="font-size:12px;font-weight:700;color:rgba(200,185,255,.45)">
+          <span style="color:#A855F7">${s.v}</span> ${s.l}
+        </span>
+      `).join("")}
     </div>
 
   </div>`;
