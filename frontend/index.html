@@ -351,25 +351,55 @@ function hdr(){
 }
 
 function agentCategoryBlocks(compact){
+  if(compact){
+    // Active agents — character select grid, fully interactive
+    const active = DEMO_KEYS.map(k => ALL_AGENTS[k]);
+    return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-family:'DM Sans',sans-serif">
+      ${active.map(a=>`
+        <div style="
+          position:relative;padding:14px 10px 12px;border-radius:10px;text-align:center;cursor:default;
+          background:linear-gradient(160deg,rgba(16,12,36,.9),rgba(8,6,20,.95));
+          border:1px solid ${a.c}20;
+          box-shadow:0 0 0 0 ${a.c}00;
+          transition:all .2s"
+          onmouseover="this.style.borderColor='${a.c}50';this.style.boxShadow='0 0 22px ${a.c}20';this.style.transform='translateY(-2px)'"
+          onmouseout="this.style.borderColor='${a.c}20';this.style.boxShadow='0 0 0 0 ${a.c}00';this.style.transform='none'">
+
+          <!-- active pulse dot -->
+          <div style="position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;background:${a.c};box-shadow:0 0 6px ${a.c};animation:glowPulse 1.8s infinite"></div>
+
+          <!-- avatar circle -->
+          <div style="width:48px;height:48px;border-radius:50%;margin:0 auto 9px;
+            background:radial-gradient(circle at 35% 35%,${a.c}18,${a.c}05);
+            border:2px solid ${a.c}60;
+            box-shadow:0 0 14px ${a.c}22;
+            display:flex;align-items:center;justify-content:center">
+            <span style="font-size:19px;font-weight:800;color:${a.c};font-family:'JetBrains Mono',monospace;line-height:1">${a.av}</span>
+          </div>
+
+          <!-- codename -->
+          <div style="font-size:11px;font-weight:700;color:#F0EAFF;letter-spacing:.06em;margin-bottom:2px">${a.codename}</div>
+          <!-- role -->
+          <div style="font-size:7.5px;font-weight:400;color:rgba(168,85,247,.4);line-height:1.4">${a.role.replace(' Analyst','').replace(' Simulator','').replace(' Evaluator','').replace(' Architect','')}</div>
+        </div>
+      `).join("")}
+    </div>`;
+  }
+
+  // Full roster — category list style
   return CATEGORIES.map(cat => {
     const agents = cat.keys.map(k => ALL_AGENTS[k]);
-    const isDemo = cat.keys.some(k => DEMO_KEYS.includes(k));
-    if(compact && !isDemo) return "";
     return `<div style="margin-bottom:14px">
       <div style="font-size:8px;font-weight:700;color:rgba(168,85,247,.28);letter-spacing:.18em;margin-bottom:7px;font-family:'DM Sans',sans-serif">${cat.label}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${agents.map(a=>`
-          <div style="display:flex;align-items:center;gap:7px;
-            padding:6px 11px 6px 9px;border-radius:4px;
-            background:rgba(10,8,24,.7);
-            border-left:2px solid ${a.c};
-            border-top:1px solid ${a.c}18;
-            border-right:1px solid ${a.c}10;
-            border-bottom:1px solid ${a.c}10">
-            <span style="font-size:12px;font-weight:800;color:${a.c};font-family:'JetBrains Mono',monospace;line-height:1;min-width:14px;text-align:center">${a.av}</span>
+          <div style="display:flex;align-items:center;gap:7px;padding:6px 11px 6px 9px;border-radius:4px;
+            background:rgba(10,8,24,.7);border-left:2px solid ${a.c};
+            border-top:1px solid ${a.c}15;border-right:1px solid ${a.c}10;border-bottom:1px solid ${a.c}10">
+            <span style="font-size:12px;font-weight:800;color:${a.c};font-family:'JetBrains Mono',monospace">${a.av}</span>
             <div>
-              <div style="font-size:10px;font-weight:700;color:rgba(230,220,255,.85);font-family:'DM Sans',sans-serif;letter-spacing:.05em;line-height:1.2">${a.codename}</div>
-              <div style="font-size:7.5px;font-weight:400;color:rgba(168,85,247,.35);font-family:'DM Sans',sans-serif;margin-top:1px">${a.name}</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(230,220,255,.85);font-family:'DM Sans',sans-serif;letter-spacing:.05em">${a.codename}</div>
+              <div style="font-size:7.5px;color:rgba(168,85,247,.35);font-family:'DM Sans',sans-serif;margin-top:1px">${a.name}</div>
             </div>
           </div>`).join("")}
       </div>
