@@ -891,7 +891,7 @@ function handleWsEvent(msg, ws){
 
     case "agent_result":
       S.nA++;
-      S.prog = Math.min((S.nA / (DEMO_AGENTS.length * PILLARS.length * 2)) * 100, 99);
+      S.prog = Math.min((S.nA / (6 * 4 * 2)) * 100, 99);
       updateBubbleDom(msg);
       appendLog(msg);
       // Update progress bar
